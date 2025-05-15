@@ -5,7 +5,7 @@ import shutil
 import subprocess
 import sys
 
-from setuptools import Extension, setup
+from setuptools import Extension, setup, find_packages
 from setuptools.command.build_ext import build_ext
 
 
@@ -133,10 +133,15 @@ setup(
     version="0.3.17",
     description="Python bindings for LASR library",
     author="LASR Team",
+
+    packages=find_packages(where="src"),
+    package_dir={"": "src"},
+
     ext_modules=[CMakeExtension("pylasr")],
     cmdclass={"build_ext": CMakeBuild},
-    zip_safe=False,
+
     python_requires=">=3.9",
+    zip_safe=False,
     include_package_data=True,
     # Add a custom PyPI classifier for easy identification
     classifiers=[

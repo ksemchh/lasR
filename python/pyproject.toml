@@ -1,10 +1,38 @@
 [build-system]
-requires = ["setuptools>=64.0.0", "cmake>=3.18"]
+requires = [
+  "setuptools>=64.0.0",
+  "wheel",
+  "cmake>=3.18"
+]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "pylasr"
-version = "0.1.0"
+version = "0.3.17"
 description = "Python bindings for LASR library"
-requires-python = ">=3.9" 
-dynamic = ["readme", "authors", "classifiers"] 
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [{ name = "LASR Team" }]
+requires-python = ">=3.9"
+dependencies = []
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering :: GIS",
+]
+dynamic = []
+
+[project.urls]
+"Homepage" = "https://github.com/r-lidar/lasR"
+"Bug Tracker" = "https://github.com/r-lidar/lasR/issues"
+"Documentation" = "https://r-lidar.github.io/lasR/"
+"Source Code" = "https://github.com/r-lidar/lasR"
+
+[tool.setuptools.packages.find]
+where = ["src"]
