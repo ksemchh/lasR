@@ -37,26 +37,14 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y \
-          gdal-bin \
-          libgdal-dev \
-          libgeos-dev \
-          libproj-dev \
-          libsqlite3-dev \
-          libtbb-dev \
-          cmake \
-          build-essential
+          gdal-bin libgdal-dev libgeos-dev libproj-dev \
+          libsqlite3-dev libtbb-dev cmake build-essential
 
     - name: Install system dependencies (macOS)
       if: runner.os == 'macOS'
       run: |
         brew update
-        brew install \
-          gdal \
-          geos \
-          proj \
-          sqlite \
-          tbb \
-          cmake
+        brew install gdal geos proj sqlite tbb cmake
 
     - name: Install system dependencies (Windows)
       if: runner.os == 'Windows'
@@ -64,29 +52,28 @@ jobs:
       run: |
         choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
         choco install sqlite -y
-        # You can add vcpkg or conda commands here for GDAL/GEOS/PROJ
+        # Можно по желанию поставить GDAL/PROJ/GEOS через vcpkg или conda
 
     - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
         pip install setuptools wheel numpy pybind11
 
-    - name: Configure pybind11 path (POSIX)
+    - name: Configure pybind11 path (Linux/macOS)
       if: runner.os != 'Windows'
       shell: bash
       run: |
-        export pybind11_DIR=$(python -c "import pybind11; print(pybind11.get_cmake_dir())")
-        echo "pybind11_DIR=$pybind11_DIR"
+        PYBIND11_DIR=$(python -c "import pybind11; print(pybind11.get_cmake_dir())")
+        echo "pybind11_DIR=$PYBIND11_DIR" >> $GITHUB_ENV
 
     - name: Configure pybind11 path (Windows)
       if: runner.os == 'Windows'
       shell: pwsh
       run: |
         $dir = python -c "import pybind11; print(pybind11.get_cmake_dir())"
-        Write-Host "pybind11_DIR=$dir"
-        echo "::set-env name=pybind11_DIR::$dir"
+        Add-Content -Path $Env:GITHUB_ENV -Value "pybind11_DIR=$dir"
 
-    - name: Build Python extension (POSIX)
+    - name: Build Python extension (Linux/macOS)
       if: runner.os != 'Windows'
       shell: bash
       working-directory: python
@@ -104,7 +91,7 @@ jobs:
         Write-Host "Built modules:"
         Get-ChildItem -Recurse -Filter *.pyd | Select-Object -First 20
 
-    - name: Run tests (POSIX)
+    - name: Run tests (Linux/macOS)
       if: runner.os != 'Windows'
       shell: bash
       working-directory: python
@@ -122,7 +109,7 @@ jobs:
         python -c "import pylasr; Write-Host 'pylasr imported successfully'"
         python tests/run_tests.py
 
-    - name: Quick smoke test (POSIX)
+    - name: Quick smoke test (Linux/macOS)
       if: runner.os != 'Windows'
       shell: bash
       working-directory: python
