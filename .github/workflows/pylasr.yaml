@@ -19,9 +19,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ['ubuntu-latest']
+        os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
         python-version: ['3.11', '3.12', '3.13']
-        
+
     steps:
     - uses: actions/checkout@v4
       with:
@@ -49,6 +49,7 @@ jobs:
     - name: Install system dependencies (macOS)
       if: runner.os == 'macOS'
       run: |
+        brew update
         brew install \
           gdal \
           geos \
@@ -59,44 +60,80 @@ jobs:
 
     - name: Install system dependencies (Windows)
       if: runner.os == 'Windows'
+      shell: pwsh
       run: |
-        choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
-        choco install sqlite
-        # Note: GDAL, GEOS, PROJ installation on Windows might require vcpkg or conda
+        choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
+        choco install sqlite -y
+        # You can add vcpkg or conda commands here for GDAL/GEOS/PROJ
 
     - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
         pip install setuptools wheel numpy pybind11
 
-    - name: Build Python extension
-      working-directory: python
+    - name: Configure pybind11 path (POSIX)
+      if: runner.os != 'Windows'
+      shell: bash
       run: |
-        # Export pybind11 path for CMake to find it
         export pybind11_DIR=$(python -c "import pybind11; print(pybind11.get_cmake_dir())")
         echo "pybind11_DIR=$pybind11_DIR"
-        python setup.py build_ext --inplace
-        
-        # List built modules to verify build succeeded
-        echo "\nBuilt modules:"
-        find . -name "*.so" -o -name "*.pyd" | head -20
 
-    - name: Run tests
+    - name: Configure pybind11 path (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        $dir = python -c "import pybind11; print(pybind11.get_cmake_dir())"
+        Write-Host "pybind11_DIR=$dir"
+        echo "::set-env name=pybind11_DIR::$dir"
+
+    - name: Build Python extension (POSIX)
+      if: runner.os != 'Windows'
+      shell: bash
       working-directory: python
       run: |
-        # Add current directory to Python path to find the built module
+        python setup.py build_ext --inplace
+        echo "Built modules:"
+        find . -name "*.so" | head -20
+
+    - name: Build Python extension (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      working-directory: python
+      run: |
+        python setup.py build_ext --inplace
+        Write-Host "Built modules:"
+        Get-ChildItem -Recurse -Filter *.pyd | Select-Object -First 20
+
+    - name: Run tests (POSIX)
+      if: runner.os != 'Windows'
+      shell: bash
+      working-directory: python
+      run: |
         export PYTHONPATH=$PWD:$PYTHONPATH
-        echo "PYTHONPATH=$PYTHONPATH"
-        
-        # Try importing pylasr directly first
-        python -c "import sys; print('Python path:', sys.path); import pylasr; print('pylasr imported successfully')" || echo "Failed to import pylasr"
-        
-        # Run the actual tests
+        python -c "import pylasr; print('pylasr imported successfully')"
         python tests/run_tests.py
 
-    - name: Run quick smoke test
+    - name: Run tests (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
       working-directory: python
       run: |
-        # Add current directory to Python path to find the built module
+        $env:PYTHONPATH = "$PWD;$env:PYTHONPATH"
+        python -c "import pylasr; Write-Host 'pylasr imported successfully'"
+        python tests/run_tests.py
+
+    - name: Quick smoke test (POSIX)
+      if: runner.os != 'Windows'
+      shell: bash
+      working-directory: python
+      run: |
         export PYTHONPATH=$PWD:$PYTHONPATH
+        python tests/run_tests.py --quick
+
+    - name: Quick smoke test (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      working-directory: python
+      run: |
+        $env:PYTHONPATH = "$PWD;$env:PYTHONPATH"
         python tests/run_tests.py --quick
