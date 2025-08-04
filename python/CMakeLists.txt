@@ -66,8 +66,22 @@ else()
     add_definitions(-DUSE_OPENMP=0)
 endif()
 
-# Compiler options
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-unknown-pragmas -Wno-unused-variable -Wno-deprecated -DNOMINMAX")
+# Compiler options: different for MSVC vs GCC/Clang
+if (MSVC)
+  # MSVC warnings/settings
+  # /W3 — default warning level; /WX — warnings as errors if you want
+  add_compile_options(/W3 /DNOMINMAX)
+else()
+  # GCC/Clang: enable all warnings, suppress a few benign ones
+  add_compile_options(
+    -Wall
+    -Wextra
+    -Wno-unknown-pragmas
+    -Wno-unused-variable
+    -Wno-deprecated
+    -DNOMINMAX
+  )
+endif()
 
 # Check for link-time optimization
 include(CheckCXXCompilerFlag)
