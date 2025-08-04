@@ -373,7 +373,6 @@ PYBIND11_MODULE(pylasr, m) {
     // Transformations
     m.def("transform_with", [](py::object connect_uid, const std::string& operation, const std::string& store_in_attribute, bool bilinear) {
         std::string uid = extract_uid(connect_uid);
-        // Проверка на тип стадии (triangulate/raster/matrix) как раньше
         if (py::isinstance<api::Pipeline>(connect_uid)) {
             auto info = get_stage_info(connect_uid.cast<api::Pipeline>());
             std::string name = info["name"].cast<std::string>();
@@ -459,11 +458,11 @@ PYBIND11_MODULE(pylasr, m) {
 
     // Helper function for common DTM pipeline
     m.def("dtm_pipeline", [](double resolution, const std::string& ofile) -> api::Pipeline {
-        return api::classify_with_csf() + api::rasterize(resolution, resolution, {"min"}, {"Classification %in% 2 9"}, ofile);
+        return api::rasterize(resolution, resolution, {"min"}, {"Classification %in% 2 9"}, ofile);
     }, "Create a DTM pipeline", py::arg("resolution"), py::arg("ofile"));
 
     // Helper function for common CHM pipeline  
     m.def("chm_pipeline", [](double resolution, const std::string& ofile) -> api::Pipeline {
-        return api::classify_with_csf() + api::rasterize(resolution, resolution, {"max"}, {"Classification != 2"}, ofile);
+        return api::rasterize(resolution, resolution, {"max"}, {"Classification != 2"}, ofile);
     }, "Create a CHM pipeline", py::arg("resolution"), py::arg("ofile"));
 }
