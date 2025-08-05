@@ -86,7 +86,8 @@ endif()
 
 # Compiler options
 if (MSVC)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3 /DNOMINMAX /DWIN32_LEAN_AND_MEAN /DNOGDI")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3 /DWIN32_LEAN_AND_MEAN /DNOGDI /DNOMINMAX")
+  add_definitions(-DWIN32_LEAN_AND_MEAN -DNOGDI -DNOMINMAX)
 else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-unknown-pragmas -Wno-unused-variable -Wno-deprecated -DNOMINMAX")
 endif()
