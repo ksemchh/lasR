@@ -61,7 +61,7 @@ jobs:
         choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
         choco install sqlite -y
 
-        - name: Install OSGeo4W
+    - name: Install OSGeo4W
       if: runner.os == 'Windows'
       shell: pwsh
       run: |
