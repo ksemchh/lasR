@@ -44,7 +44,14 @@ jobs:
       if: runner.os == 'macOS'
       run: |
         brew update
-        brew install gdal geos proj sqlite tbb cmake
+        brew install gdal geos proj sqlite tbb cmake libomp
+        export CPPFLAGS="-I$(brew --prefix libomp)/include"
+        export LDFLAGS="-L$(brew --prefix libomp)/lib"
+        mkdir build && cd build
+        cmake .. \
+          -DCMAKE_CXX_FLAGS="-Xpreprocessor -fopenmp" \
+          -DCMAKE_EXE_LINKER_FLAGS="-lomp"
+        cmake --build .
 
     - name: Install system dependencies (Windows)
       if: runner.os == 'Windows'
