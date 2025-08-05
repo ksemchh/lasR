@@ -60,8 +60,30 @@ jobs:
       run: |
         choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
         choco install sqlite -y
-        choco install gdal -y
-        choco install gdal-headers -y
+
+        - name: Install OSGeo4W
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        $url  = "https://download.osgeo.org/osgeo4w/osgeo4w-setup-x86_64.exe"
+        $file = "osgeo4w-setup-x86_64.exe"
+        Invoke-WebRequest $url -OutFile $file
+
+        Start-Process .\$file -ArgumentList @(
+          "-q",
+          "-P", "gdal,geos,proj,sqlite3,tbb,cmake"
+        ) -Wait
+
+    - name: Configure OSGeo4W environment
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        $osgeoRoot = "C:\OSGeo4W64"
+        Add-Content -Path $Env:GITHUB_PATH -Value "$osgeoRoot\bin"
+        Add-Content -Path $Env:GITHUB_ENV  -Value "GDAL_ROOT=$osgeoRoot"
+        Add-Content -Path $Env:GITHUB_ENV  -Value "GEOS_ROOT=$osgeoRoot"
+        Add-Content -Path $Env:GITHUB_ENV  -Value "PROJ_ROOT=$osgeoRoot"
+        Add-Content -Path $Env:GITHUB_ENV  -Value "TBB_ROOT=$osgeoRoot"
 
     - name: Install Python dependencies
       run: |
