@@ -4,6 +4,13 @@ project(pylasr)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+// -------------------------------------------------------------------------
+// 1) Suppress MSVC “unsafe” warnings
+// -------------------------------------------------------------------------
+if (MSVC)
+  add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+endif()
+
 # Get the parent directory
 get_filename_component(LASR_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/.. ABSOLUTE)
 message(STATUS "LASR_SOURCE_DIR: ${LASR_SOURCE_DIR}")

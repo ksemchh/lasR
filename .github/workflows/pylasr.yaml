@@ -60,6 +60,8 @@ jobs:
       run: |
         choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
         choco install sqlite -y
+        choco install gdal -y
+        choco install gdal-headers -y
 
     - name: Install Python dependencies
       run: |
