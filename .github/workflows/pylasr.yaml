@@ -65,13 +65,15 @@ jobs:
       if: runner.os == 'Windows'
       shell: pwsh
       run: |
-        $url  = "https://download.osgeo.org/osgeo4w/osgeo4w-setup-x86_64.exe"
-        $file = "osgeo4w-setup-x86_64.exe"
-        Invoke-WebRequest $url -OutFile $file
+        $url  = "https://download.osgeo.org/osgeo4w/v2/osgeo4w-setup.exe"
+        $file = "osgeo4w-setup.exe"
+        Invoke-WebRequest -Uri $url -OutFile $file
 
         Start-Process .\$file -ArgumentList @(
-          "-q",
-          "-P", "gdal,geos,proj,sqlite3,tbb,cmake"
+          "--quiet-mode",
+          "--arch", "x86_64",
+          "--site", "https://download.osgeo.org/osgeo4w/v2",
+          "--packages", "gdal,geos,proj,sqlite3,tbb,cmake"
         ) -Wait
 
     - name: Configure OSGeo4W environment
