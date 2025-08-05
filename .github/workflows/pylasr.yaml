@@ -56,7 +56,7 @@ jobs:
         conda config --add channels conda-forge
         conda config --set channel_priority strict
 
-        conda install -y gdal proj geos cmake numpy
+        conda install -y gdal proj geos cmake numpy pybind11
 
     - name: Install Python dependencies
       run: |
