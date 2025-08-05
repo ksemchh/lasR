@@ -50,6 +50,23 @@ if(USE_OPENMP)
         find_package(OpenMP)
     endif()
 
+    # Check for advanced OpenMP functions
+    include(CheckCXXSourceCompiles)
+    if(OpenMP_CXX_FOUND)
+        check_cxx_source_compiles(
+            "#include <omp.h>\nint main() { omp_set_max_active_levels(1); return 0; }" HAVE_OMP_SET_MAX_ACTIVE_LEVELS)
+
+        check_cxx_source_compiles(
+            "#include <omp.h>\nint main() { (void)omp_get_thread_limit(); return 0; }" HAVE_OMP_GET_THREAD_LIMIT)
+
+        if(HAVE_OMP_SET_MAX_ACTIVE_LEVELS)
+            add_definitions(-DHAVE_OMP_SET_MAX_ACTIVE_LEVELS)
+        endif()
+        if(HAVE_OMP_GET_THREAD_LIMIT)
+            add_definitions(-DHAVE_OMP_GET_THREAD_LIMIT)
+        endif()
+    endif()
+
     if(OpenMP_CXX_FOUND)
         message(STATUS "OpenMP found and enabled")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
