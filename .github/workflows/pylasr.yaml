@@ -40,10 +40,20 @@ jobs:
           gdal-bin libgdal-dev libgeos-dev libproj-dev \
           libsqlite3-dev libtbb-dev cmake build-essential
 
-    - name: Install system dependencies (Windows)
+    - name: Set up Miniconda on Windows
       if: runner.os == 'Windows'
+      uses: conda-incubator/setup-miniconda@v3
+      with:
+        auto-update-conda: true
+        activate-environment: test-env
+        environment-file: ""
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies via conda on Windows
+      if: runner.os == 'Windows'
+      shell: bash
       run: |
-        choco install -y gdal proj geos cmake
+        conda install -y gdal proj geos cmake numpy
 
     - name: Install Python dependencies
       run: |
