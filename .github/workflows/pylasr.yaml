@@ -52,6 +52,8 @@ jobs:
       run: |
         choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
         choco install sqlite -y
+        vcpkg install gdal:x64-windows
+        vcpkg integrate install
 
     - name: Install Python dependencies
       run: |
@@ -71,6 +73,10 @@ jobs:
       run: |
         $dir = python -c "import pybind11; print(pybind11.get_cmake_dir())"
         Add-Content -Path $Env:GITHUB_ENV -Value "pybind11_DIR=$dir"
+        cmake -S . -B build \
+          -DGDAL_INCLUDE_DIR="C:/path/to/gdal/include" \
+          -DGDAL_LIBRARY="C:/path/to/gdal/lib/gdal.lib"
+        cmake --build build
 
     - name: Build Python extension (Linux/macOS)
       if: runner.os != 'Windows'
