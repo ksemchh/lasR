@@ -1,11 +1,5 @@
 #include "openmp.h"
 
-#ifdef HAVE_OMP_GET_THREAD_LIMIT
-    return omp_get_thread_limit();
-#else
-    return omp_get_max_threads();
-#endif
-
 int available_threads()
 {
   int max = omp_get_max_threads();
