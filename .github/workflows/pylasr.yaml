@@ -54,9 +54,14 @@ jobs:
           -Uri 'https://download.osgeo.org/osgeo4w/osgeo4w-setup-v2.exe' `
           -OutFile osgeo4w-setup.exe
 
-        .\osgeo4w-setup.exe -q -k -a x86_64 \
-          -P gdal,proj,geos,sqlite3,tbb,cmake \
-          -s https://download.osgeo.org/osgeo4w/v2
+        Start-Process `
+          -FilePath .\osgeo4w-setup.exe `
+          -ArgumentList @(
+            '-q','-k','-a','x86_64',
+            '-P','gdal,proj,geos,sqlite3,tbb,cmake',
+            '-s','https://download.osgeo.org/osgeo4w/v2'
+          ) `
+          -Wait -NoNewWindow
 
         refreshenv
 
