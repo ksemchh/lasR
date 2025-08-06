@@ -113,7 +113,19 @@ jobs:
         set "PATH=%ORIG_PATH%;C:\OSGeo4W\bin;C:\OSGeo4W\usr\bin"
         set "CMAKE_PREFIX_PATH=C:\OSGeo4W\usr"
         cd python
-        "%PY_EXE%" setup.py build_ext --inplace -vvv
+        mkdir build && cd build
+        cmake .. ^
+          -G "Visual Studio 17 2022" ^
+          -A x64 ^
+          -DCMAKE_PREFIX_PATH=C:/OSGeo4W/usr ^
+          -DGDAL_INCLUDE_DIR=C:/OSGeo4W/usr/include ^
+          -DGDAL_LIBRARY=C:/OSGeo4W/usr/lib/gdal_i.lib ^
+          -DPROJ_INCLUDE_DIR=C:/OSGeo4W/usr/include ^
+          -DPROJ_LIBRARY=C:/OSGeo4W/usr/lib/proj_i.lib ^
+          -DPYTHON_EXECUTABLE="%PY_EXE%" ^
+          -DCMAKE_BUILD_TYPE=Release
+        cmake --build . --config Release -- /maxcpucount:3
+        cd ..
         dir pylasr*.pyd
 
     - name: Run tests
