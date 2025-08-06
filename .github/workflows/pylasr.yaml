@@ -46,18 +46,17 @@ jobs:
         brew update
         brew install libomp gdal geos proj sqlite3 tbb cmake
 
-    - name: Install GDAL/PROJ/GEOS on Windows
+    - name: Install GDAL/PROJ/GEOS via OSGeo4W on Windows
       if: runner.os == 'Windows'
       shell: pwsh
       run: |
         Invoke-WebRequest `
-          -Uri https://download.osgeo.org/osgeo4w/osgeo4w-setup-x86_64.exe `
+          -Uri 'https://download.osgeo.org/osgeo4w/osgeo4w-setup-v2.exe' `
           -OutFile osgeo4w-setup.exe
 
-        Start-Process .\osgeo4w-setup.exe -ArgumentList `
-          '--quiet-mode', `
-          '-P', 'gdal,proj,geos,sqlite3,tbb,cmake' `
-          -Wait
+        .\osgeo4w-setup.exe -q -k -a x86_64 \
+          -P gdal,proj,geos,sqlite3,tbb,cmake \
+          -s https://download.osgeo.org/osgeo4w/v2
 
         refreshenv
 
