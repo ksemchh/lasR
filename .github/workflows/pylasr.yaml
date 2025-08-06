@@ -58,7 +58,7 @@ jobs:
           -FilePath .\osgeo4w-setup.exe `
           -ArgumentList @(
             '-q','-k','-a','x86_64',
-            '-P','gdal,proj,geos,sqlite3,tbb,cmake',
+            -P','gdal,gdal-devel,proj,proj-devel,geos,geos-devel,sqlite3,sqlite3-devel,tbb,tbb-devel,cmake'
             '-s','https://download.osgeo.org/osgeo4w/v2'
           ) `
           -Wait -NoNewWindow
