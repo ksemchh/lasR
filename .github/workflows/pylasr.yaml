@@ -107,10 +107,13 @@ jobs:
       if: runner.os == 'Windows'
       shell: cmd
       run: |
+        set "ORIG_PATH=%PATH%"
+        set "PY_EXE=%pythonLocation%\python.exe"
         call C:\OSGeo4W\bin\o4w_env.bat
+        set "PATH=%ORIG_PATH%;C:\OSGeo4W\bin;C:\OSGeo4W\usr\bin"
         set "CMAKE_PREFIX_PATH=C:\OSGeo4W\usr"
         cd python
-        python setup.py build_ext --inplace -vvv
+        "%PY_EXE%" setup.py build_ext --inplace -vvv
         dir pylasr*.pyd
 
     - name: Run tests
