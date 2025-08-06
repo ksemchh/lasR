@@ -105,17 +105,13 @@ jobs:
 
     - name: Build extension on Windows
       if: runner.os == 'Windows'
-      shell: pwsh
+      shell: cmd
       run: |
-        # Заходим в OSGeo4W Shell, чтобы выставить INCLUDE/LIB/PATH
-        & 'C:\OSGeo4W\OSGeo4W.bat'
-        # Сообщаем CMake, где корень ваших пакетов
-        $Env:CMAKE_PREFIX_PATH = 'C:\OSGeo4W'
-        # Собираем расширение
+        call C:\OSGeo4W\bin\o4w_env.bat
+        set "CMAKE_PREFIX_PATH=C:\OSGeo4W\usr"
         cd python
         python setup.py build_ext --inplace -vvv
-        # Проверяем, что модуль появился
-        dir *.pyd
+        dir pylasr*.pyd
 
     - name: Run tests
       run: |
