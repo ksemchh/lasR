@@ -84,6 +84,19 @@ else()
     add_definitions(-DUSE_OPENMP=0)
 endif()
 
+if (WIN32)
+  set(OSGEO4W_ROOT "C:/OSGeo4W")
+  include_directories("${OSGEO4W_ROOT}/include")
+  link_directories   ("${OSGEO4W_ROOT}/lib")
+endif()
+
+find_package(GDAL REQUIRED)
+find_package(OpenMP)
+if(OpenMP_CXX_FOUND)
+  target_compile_options(pylasr PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/openmp>)
+  target_link_libraries (pylasr PRIVATE OpenMP::OpenMP_CXX)
+endif()
+
 # Compiler options
 if (MSVC)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3 /DWIN32_LEAN_AND_MEAN /DNOGDI /DNOMINMAX")
