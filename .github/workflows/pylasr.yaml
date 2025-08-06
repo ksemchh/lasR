@@ -109,11 +109,15 @@ jobs:
       run: |
         set "ORIG_PATH=%PATH%"
         set "PY_EXE=%pythonLocation%\python.exe"
+
         call C:\OSGeo4W\bin\o4w_env.bat
+
         set "PATH=%ORIG_PATH%;C:\OSGeo4W\bin;C:\OSGeo4W\usr\bin"
         set "CMAKE_PREFIX_PATH=C:\OSGeo4W\usr"
+
         cd python
         mkdir build && cd build
+        "%PY_EXE%" -m pip install --upgrade cmake
         cmake .. ^
           -G "Visual Studio 17 2022" ^
           -A x64 ^
@@ -125,7 +129,7 @@ jobs:
           -DPYTHON_EXECUTABLE="%PY_EXE%" ^
           -DCMAKE_BUILD_TYPE=Release
         cmake --build . --config Release -- /maxcpucount:3
-        cd ..
+
         dir pylasr*.pyd
 
     - name: Run tests
