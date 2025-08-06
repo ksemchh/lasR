@@ -72,10 +72,6 @@ jobs:
         $env:INCLUDE = "${osgeo}\include;" + ($env:INCLUDE -split ';' | Where { $_ }) -join ';'
         $env:LIB     = "${osgeo}\lib;"     + ($env:LIB     -split ';' | Where { $_ }) -join ';'
 
-        gdalinfo --version
-
-        proj -V
-
     - name: Install Python packages on Ubuntu/macOS
       if: runner.os != 'Windows'
       run: |
