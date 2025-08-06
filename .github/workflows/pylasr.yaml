@@ -63,7 +63,17 @@ jobs:
           ) `
           -Wait -NoNewWindow
 
-        refreshenv
+    - name: Add OSGeo4W to PATH on Windows
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        $osgeo = 'C:\OSGeo4W'
+        $env:PATH += ";$osgeo\bin;$osgeo\usr\bin"
+        $env:INCLUDE = "${osgeo}\include;" + ($env:INCLUDE -split ';' | Where { $_ }) -join ';'
+        $env:LIB     = "${osgeo}\lib;"     + ($env:LIB     -split ';' | Where { $_ }) -join ';'
+
+        gdalinfo --version
+        projinfo --version
 
     - name: Install Python packages on Ubuntu/macOS
       if: runner.os != 'Windows'
