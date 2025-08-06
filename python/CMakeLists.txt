@@ -3,17 +3,6 @@ cmake_minimum_required(VERSION 3.7)
 project(pylasr)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-
-find_package(GDAL REQUIRED)
-find_package(PROJ REQUIRED)
-
-include_directories(
-  ${GDAL_INCLUDE_DIR}
-  ${PROJ_INCLUDE_DIR}
-)
-
-target_link_libraries(pylasr PRIVATE ${GDAL_LIBRARY} ${PROJ_LIBRARY})
 
 # Get the parent directory
 get_filename_component(LASR_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/.. ABSOLUTE)
