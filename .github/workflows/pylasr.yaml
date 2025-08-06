@@ -53,7 +53,7 @@ jobs:
       if: runner.os == 'macOS'
       run: |
         brew update
-        brew install gdal geos proj sqlite3 tbb cmake
+        brew install libomp gdal geos proj sqlite3 tbb cmake
 
     - name: Install GDAL/PROJ/GEOS + pybind11 on Windows
       if: runner.os == 'Windows'
@@ -91,7 +91,7 @@ jobs:
       if: runner.os != 'Windows'
       run: |
         cd python
-        python setup.py build_ext --inplace -v
+        python setup.py build_ext --inplace -vvv
         find . -name "*.so" | head -20
 
     - name: Build extension on Windows
