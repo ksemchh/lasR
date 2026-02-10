@@ -188,8 +188,8 @@ ans
 #> resolution  : 1, 1  (x, y)
 #> extent      : 273357, 273643, 5274357, 5274643  (xmin, xmax, ymin, ymax)
 #> coord. ref. : NAD83(CSRS) / MTM zone 7 (EPSG:2949) 
-#> source      : file2880622e6d73.tif 
-#> name        : file2880622e6d73
+#> source      : file282e3cd68a3b.tif 
+#> name        : file282e3cd68a3b
 ```
 
 Here, [`exec()`](https://r-lidar.github.io/lasR/reference/exec.md)
@@ -344,8 +344,8 @@ norm = transform_with(del, "-")
 pipeline =  write1 + del + norm + write2
 ans = exec(pipeline, on = f)
 ans
-#>  - write_las : /tmp/RtmpSHAghB/bcts_1_ground.laz /tmp/RtmpSHAghB/bcts_2_ground.laz 
-#>  - write_las.1 : /tmp/RtmpSHAghB/bcts_1_normalized.laz /tmp/RtmpSHAghB/bcts_2_normalized.laz
+#>  - write_las : /tmp/RtmpMYeZK9/bcts_1_ground.laz /tmp/RtmpMYeZK9/bcts_2_ground.laz 
+#>  - write_las.1 : /tmp/RtmpMYeZK9/bcts_1_normalized.laz /tmp/RtmpMYeZK9/bcts_2_normalized.laz
 ```
 
 It is crucial to include a wildcard `*` in the file path; otherwise, a
@@ -360,7 +360,7 @@ ofile = paste0(tempdir(), "/dataset_merged.laz")
 merge = reader() + write_las(ofile)
 ans = exec(merge, on = f)
 ans
-#> [1] "/tmp/RtmpSHAghB/dataset_merged.laz"
+#> [1] "/tmp/RtmpMYeZK9/dataset_merged.laz"
 ```
 
 ## Local maximum
@@ -792,8 +792,8 @@ ans
 #> resolution  : 1, 1  (x, y)
 #> extent      : 273357, 273643, 5274357, 5274643  (xmin, xmax, ymin, ymax)
 #> coord. ref. :  
-#> source      : file28803a1be5c.tif 
-#> name        : file28803a1be5c
+#> source      : file282e56ff0e43.tif 
+#> name        : file282e56ff0e43
 cloud
 #> Source       : LASF (v1.2)
 #> Size         : 737.18 kB
