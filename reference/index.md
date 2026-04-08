@@ -3,16 +3,23 @@
 ## All functions
 
 - [`add_extrabytes()`](https://r-lidar.github.io/lasR/reference/add_attribute.md)
+  [`keep_attributes()`](https://r-lidar.github.io/lasR/reference/add_attribute.md)
   [`remove_attribute()`](https://r-lidar.github.io/lasR/reference/add_attribute.md)
+  [`remove_attributes()`](https://r-lidar.github.io/lasR/reference/add_attribute.md)
   : Add attributes to a point cloud
-- [`add_rgb()`](https://r-lidar.github.io/lasR/reference/add_rgb.md) :
-  Add RGB attributes to a LAS file
+- [`add_rgb()`](https://r-lidar.github.io/lasR/reference/add_rgb.md)
+  [`remove_rgb()`](https://r-lidar.github.io/lasR/reference/add_rgb.md)
+  : Add/remove RGB attributes to a LAS file
 - [`callback()`](https://r-lidar.github.io/lasR/reference/callback.md) :
   Call a user-defined function on the point cloud
 - [`classify_with_csf()`](https://r-lidar.github.io/lasR/reference/classify_with_csf.md)
   : Classify ground points
+- [`classify_with_ipf()`](https://r-lidar.github.io/lasR/reference/classify_with_ipf.md)
+  : Classify noise points
 - [`classify_with_ivf()`](https://r-lidar.github.io/lasR/reference/classify_with_ivf.md)
   : Classify noise points
+- [`classify_with_ptd()`](https://r-lidar.github.io/lasR/reference/classify_with_ptd.md)
+  : Ground Point Classification
 - [`classify_with_sor()`](https://r-lidar.github.io/lasR/reference/classify_with_sor.md)
   : Classify noise points
 - [`delete_points()`](https://r-lidar.github.io/lasR/reference/delete_points.md)
@@ -116,6 +123,8 @@
   : Set global processing options
 - [`sort_points()`](https://r-lidar.github.io/lasR/reference/sort_points.md)
   : Sort points in the point cloud
+- [`spikefree()`](https://r-lidar.github.io/lasR/reference/spikefree.md)
+  : Digital Surface Model
 - [`stop_if_outside()`](https://r-lidar.github.io/lasR/reference/stop_if_outside.md)
   : Stop the pipeline conditionally
 - [`summarise()`](https://r-lidar.github.io/lasR/reference/summarise.md)
@@ -125,6 +134,7 @@
   [`tempshp()`](https://r-lidar.github.io/lasR/reference/temporary_files.md)
   [`templas()`](https://r-lidar.github.io/lasR/reference/temporary_files.md)
   [`templaz()`](https://r-lidar.github.io/lasR/reference/temporary_files.md)
+  [`temppcd()`](https://r-lidar.github.io/lasR/reference/temporary_files.md)
   : Temporary files
 - [`print(`*`<PipelinePtr>`*`)`](https://r-lidar.github.io/lasR/reference/tools.md)
   [`` `+`( ``*`<PipelinePtr>`*`)`](https://r-lidar.github.io/lasR/reference/tools.md)

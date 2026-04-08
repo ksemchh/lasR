@@ -1,5 +1,49 @@
 # Changelog
 
+## lasR 0.19.0
+
+- New: Progressive TIN densification with
+  [`classify_with_ptd()`](https://r-lidar.github.io/lasR/reference/classify_with_ptd.md)
+- New: CHM with the spike-free algorithm with
+  [`spikefree()`](https://r-lidar.github.io/lasR/reference/spikefree.md) +
+  locally adaptative spikefree
+- New: Metric engine support `|x|` modifier to compute on the absolue
+  value. It is now possible to write
+  e.g. `rasterize(5, c("a_mean", "|a|_mean"))`
+- Fix: crash with rare cases of streamable pipeline + chunking + empty
+  chunks.
+
+## lasR 0.18.2
+
+- Fix: [\#275](https://github.com/r-lidar/lasR/issues/275) wrong
+  zhistogram output in `summarize()` for bins != 2
+- Fix: displayed progress bar values in parallel
+
+## lasR 0.18.0
+
+- New: [\#263](https://github.com/r-lidar/lasR/issues/263) new argument
+  `always_up` in
+  [`geometry_features()`](https://r-lidar.github.io/lasR/reference/geometry_features.md).
+- New stage `remove_attributes` that deprecated `remove_attribute` (no
+  `s`).
+- New stage `keep_attributes`
+- New stage
+  [`remove_rgb()`](https://r-lidar.github.io/lasR/reference/add_rgb.md)
+- New stage
+  [`classify_with_ipf()`](https://r-lidar.github.io/lasR/reference/classify_with_ipf.md)
+  to classify points with isolated point filter.
+- New function
+  [`temppcd()`](https://r-lidar.github.io/lasR/reference/temporary_files.md)
+- New arguments `version` and `pdrf` in
+  [`write_las()`](https://r-lidar.github.io/lasR/reference/write.md) to
+  enforce a specific LAS version and point format.
+- New feature
+  [`classify_with_ivf()`](https://r-lidar.github.io/lasR/reference/classify_with_ivf.md)
+  supports non cubic voxels with
+  e.g. `classify_with_ivf(res = c(1,1,2))`
+- Fix: [\#265](https://github.com/r-lidar/lasR/issues/265) VPC without
+  epsg.
+
 ## lasR 0.17.4
 
 - Fix: [\#247](https://github.com/r-lidar/lasR/issues/247) memory
