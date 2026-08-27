@@ -111,29 +111,29 @@ chm  <- rasterize(2, "max") # input is a character vector
 pipeline <- read + tri + dtm + avgi + chm
 ans <- exec(pipeline, on = f)
 ans[[1]]
-#> class       : SpatRaster 
+#> class       : SpatRaster
 #> size        : 286, 286, 1  (nrow, ncol, nlyr)
 #> resolution  : 1, 1  (x, y)
 #> extent      : 273357, 273643, 5274357, 5274643  (xmin, xmax, ymin, ymax)
-#> coord. ref. : NAD83(CSRS) / MTM zone 7 (EPSG:2949) 
-#> source      : file25a53a98514b.tif 
-#> name        : file25a53a98514b 
+#> coord. ref. : NAD83(CSRS) / MTM zone 7 (EPSG:2949)
+#> source      : file23682692314f.tif
+#> name        : file23682692314f
 ans[[2]]
-#> class       : SpatRaster 
+#> class       : SpatRaster
 #> size        : 30, 30, 1  (nrow, ncol, nlyr)
 #> resolution  : 10, 10  (x, y)
 #> extent      : 273350, 273650, 5274350, 5274650  (xmin, xmax, ymin, ymax)
-#> coord. ref. : NAD83(CSRS) / MTM zone 7 (EPSG:2949) 
-#> source      : file25a51f51d3e1.tif 
-#> name        : file25a51f51d3e1 
+#> coord. ref. : NAD83(CSRS) / MTM zone 7 (EPSG:2949)
+#> source      : file2368ef11651.tif
+#> name        : file2368ef11651
 ans[[3]]
-#> class       : SpatRaster 
+#> class       : SpatRaster
 #> size        : 144, 144, 1  (nrow, ncol, nlyr)
 #> resolution  : 2, 2  (x, y)
 #> extent      : 273356, 273644, 5274356, 5274644  (xmin, xmax, ymin, ymax)
-#> coord. ref. : NAD83(CSRS) / MTM zone 7 (EPSG:2949) 
-#> source      : file25a5201f252a.tif 
-#> name        : max 
+#> coord. ref. : NAD83(CSRS) / MTM zone 7 (EPSG:2949)
+#> source      : file23683b290032.tif
+#> name        : max
 
 # Demonstration of buffered rasterization
 

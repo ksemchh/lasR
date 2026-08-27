@@ -1,14 +1,15 @@
-pandoc: 3.1.11
-pkgdown: 2.2.0
+pandoc: 3.8.3
+pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
   baba: baba.html
   benchmarks: benchmarks.html
   multithreading: multithreading.html
   r-stages: r-stages.html
+  remote: remote.html
   tutorial: tutorial.html
   why: why.html
-last_built: 2026-04-08T07:25Z
+last_built: 2026-08-27T05:22Z
 urls:
   reference: https://r-lidar.github.io/lasR/reference
   article: https://r-lidar.github.io/lasR/articles

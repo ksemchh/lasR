@@ -55,11 +55,11 @@ las
 #>  Name: Withheld          | bit    | Desc: Point is supposed to be deleted)
 u = exec(chm(5), on = las)
 u
-#> class       : SpatRaster 
+#> class       : SpatRaster
 #> size        : 58, 58, 1  (nrow, ncol, nlyr)
 #> resolution  : 5, 5  (x, y)
 #> extent      : 273355, 273645, 5274355, 5274645  (xmin, xmax, ymin, ymax)
-#> coord. ref. :  
-#> source      : file25a51176b391.tif 
-#> name        : max 
+#> coord. ref. : 
+#> source      : file236839fd874d.tif
+#> name        : max
 ```

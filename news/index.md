@@ -1,5 +1,68 @@
 # Changelog
 
+## lasR 0.21.2
+
+- Fix: [\#338](https://github.com/r-lidar/lasR/issues/338) callback
+  returning R object with multiple files
+
+## lasR 0.21.1
+
+- Fix: [\#323](https://github.com/r-lidar/lasR/issues/323): streaming
+  bounding box filter.
+- Fix: [\#317](https://github.com/r-lidar/lasR/issues/317): `ptd` now
+  bypasses processing when there are 0 points instead of throwing an
+  error.
+- Fix: [\#321](https://github.com/r-lidar/lasR/issues/321)
+  [`classify_with_csf()`](https://r-lidar.github.io/lasR/reference/classify_with_csf.md)
+  no longer reads one element past the end of the ground-index vector
+  once all ground points have been matched, preventing an out-of-bounds
+  heap read on nearly every call.
+- Fix: [\#335](https://github.com/r-lidar/lasR/issues/335):
+  [`rasterize()`](https://r-lidar.github.io/lasR/reference/rasterize.md)
+  with streamable metrics and a computation resolution different from
+  the raster resolution (buffered rasterization) was not applying
+  buffering.
+
+## lasR 0.21.0
+
+- Fix: [\#117](https://github.com/r-lidar/lasR/issues/117) segfault when
+  reading a file with a malformed Extra Bytes VLR that declares more
+  extra-byte attributes than the point record length reserves. Such
+  attributes are now read as 0 and a warning is emitted instead of
+  crashing.
+- New: Support of Entwine Point Tile format
+- New: `classify_with_ivf` gains a parameter `filter`
+  ([\#289](https://github.com/r-lidar/lasR/issues/289))
+- Change:
+  [`drop_noise()`](https://r-lidar.github.io/lasR/reference/filters.md)
+  and
+  [`keep_noise()`](https://r-lidar.github.io/lasR/reference/filters.md)
+  now filter classes 7 and 18 instead of 18 only
+  ([\#283](https://github.com/r-lidar/lasR/issues/283))
+- New: record `use_attribute` as a field in
+  [`local_maximum()`](https://r-lidar.github.io/lasR/reference/local_maximum.md)
+  output ([\#310](https://github.com/r-lidar/lasR/issues/310))
+- New: operator `=` in
+  [`transform_with()`](https://r-lidar.github.io/lasR/reference/transform_with.md)
+  to assign a field
+  ([\#314](https://github.com/r-lidar/lasR/issues/314))
+
+## lasR 0.20.1
+
+- Enhance: documentation of `classify_with_ptd`
+  ([\#288](https://github.com/r-lidar/lasR/issues/288))
+
+## lasR 0.20.0
+
+- NEW: Support of remote files
+
+``` r
+
+url <- "https://s3.amazonaws.com/hobu-lidar/autzen-classified.copc.laz"
+pipeline <-  reader_circles(637368.8, 851944.8, 15) + summarise()
+ans <- exec(pipeline, on = url)
+```
+
 ## lasR 0.19.0
 
 - New: Progressive TIN densification with
@@ -72,12 +135,14 @@
   progress). Accessible in R API via
 
   ``` r
+
   exec(..., progress_file = "path/to/progress.ext", log_file = "path/to/log.ext")
   ```
 
   Accessible in the C++ API via two members
 
   ``` r
+
   Pipeline::set_progress_file(std::string);
   Pipeline::set_profile_file(std::string);
   ```
@@ -143,6 +208,7 @@ execute(file);
 in `R`:
 
 ``` r
+
 library(lasR)
 
 pipeline = info() + 
@@ -429,6 +495,7 @@ all the unit tests are passing.
   memory.
 
   ``` r
+
   f <- system.file("extdata", "Topography.las", package="lasR")
   pc <- read_cloud(f)
   u = exec(chm(5), on = pc)
@@ -459,6 +526,7 @@ all the unit tests are passing.
   example:
 
   ``` r
+
   sampling_poisson(1, filter = keep_ground())
   ```
 
@@ -1051,6 +1119,7 @@ time to around 0.1 seconds, greatly improving overall performance.
   was not possible with the previous syntax.
 
   ``` r
+
   ctg = lidR::readLAScatalog()
   pipeline = reader_las() + rasterize(...)
   exec(pipeline, on = ctg)
@@ -1059,6 +1128,7 @@ time to around 0.1 seconds, greatly improving overall performance.
 - New: the processor is now able to process by chunk like `lidR`
 
   ``` r
+
   pipeline = reader_las() + rasterize(...)
   exec(pipeline, on = file, chunk = 500)
   ```
@@ -1070,6 +1140,7 @@ time to around 0.1 seconds, greatly improving overall performance.
 - New: it is now possible to write the following:
 
   ``` r
+
   dtm = dtm()
   pipeline <- read + dtm + transform_with(dtm[[2]])
   ```
@@ -1078,6 +1149,7 @@ time to around 0.1 seconds, greatly improving overall performance.
   adds a default reader
 
   ``` r
+
   pipeline = rasterize(...)
   exec(pipeline, on = ctg)
   ```
