@@ -162,8 +162,9 @@ resolve_aoi <- function(aoi)
   if (!is.list(aoi))
     stop("'aoi' must be a WKT string, an sf object or a list of coordinate rings")
 
-  # A list of rings is a polygon, a list of such lists is a multipolygon
-  if (is.list(aoi[[1]]))
+  # A list of rings is a polygon, a list of such lists is a multipolygon. A data.frame is a list too
+  # and is a ring, not a list of them
+  if (is.list(aoi[[1]]) && !is.data.frame(aoi[[1]]))
     return(paste0("MULTIPOLYGON(", paste(sapply(aoi, rings_to_wkt), collapse = ", "), ")"))
 
   return(paste0("POLYGON", rings_to_wkt(aoi)))
