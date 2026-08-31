@@ -60,7 +60,7 @@ struct PointXYZAttrs : PointXYZ
   std::vector<double> vals;
 };
 
-enum ShapeType { UNKNOWN, RECTANGLE, CIRCLE, TRIANGLE, SPHERE};
+enum ShapeType { UNKNOWN, RECTANGLE, CIRCLE, TRIANGLE, SPHERE, POLYGON};
 
 struct Shape
 {
@@ -205,6 +205,42 @@ public:
   void make_counterclockwise();
   bool contains(const PointXY& p) const;
   bool contains(const PolygonXY& other) const;
+};
+
+// Area of interest made of one or several rings. Membership uses the even-odd rule over every ring
+// at once so that holes and multiple parts need no bookkeeping. The geometry is therefore expected
+// to be valid: two parts that overlap cancel each other in their intersection.
+class PolygonShape : public Shape
+{
+public:
+  PolygonShape();
+  static PolygonShape* from_wkt(const std::string& wkt, std::string& error);
+
+  void add_ring(const PolygonXY& ring);
+  void build();
+
+  bool contains(double x, double y) const override;
+  bool near_boundary(double x, double y, double distance) const;
+  bool intersects(double xmin, double ymin, double xmax, double ymax) const;
+
+  double xmin() const override { return minx; };
+  double ymin() const override { return miny; };
+  double xmax() const override { return maxx; };
+  double ymax() const override { return maxy; };
+  PointXYZ centroid() const override { return PointXYZ((minx+maxx)/2, (miny+maxy)/2, 0); };
+  ShapeType type() const override { return ShapeType::POLYGON; };
+
+private:
+  int band_of(double y) const;
+  static double square_distance_to_edge(const Edge& e, double x, double y);
+
+  std::vector<Edge> edges;
+  std::vector<std::vector<int>> bands; // indices of the edges spanning each horizontal band
+  double band_height;
+  double minx;
+  double miny;
+  double maxx;
+  double maxy;
 };
 
 

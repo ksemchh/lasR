@@ -528,6 +528,28 @@ void FileCollection::add_query(double xcenter, double ycenter, double radius)
   queries.push_back(circ);
 }
 
+bool FileCollection::set_aoi(const std::string& wkt)
+{
+  if (wkt.empty())
+  {
+    aoi = nullptr;
+    return true;
+  }
+
+  std::string error;
+  PolygonShape* shape = PolygonShape::from_wkt(wkt, error);
+
+  if (shape == nullptr)
+  {
+    last_error = "Invalid area of interest: " + error;
+    return false;
+  }
+
+  aoi.reset(shape);
+
+  return true;
+}
+
 bool FileCollection::add_las_file(std::string file, bool noprocess)
 {
   std::replace(file.begin(), file.end(), '\\', '/' );
@@ -723,6 +745,14 @@ bool FileCollection::get_chunk(int i, Chunk& chunk) const
   {
     success = get_chunk_with_query(i, chunk);
     chunk.process = true;
+  }
+
+  // The area of interest does not drive the chunking. It clips every chunk and rules out those it
+  // does not reach. Those remain available to buffer their neighbours
+  if (aoi != nullptr)
+  {
+    chunk.aoi = aoi;
+    if (!aoi->intersects(chunk.xmin, chunk.ymin, chunk.xmax, chunk.ymax)) chunk.process = false;
   }
 
   chunk.id = i;

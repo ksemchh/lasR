@@ -52,6 +52,7 @@ Raster::Raster(const Raster& raster) : Grid(raster), GDALdataset()
   GDALdataset::set_raster(this->xmin, this->ymax, this->ncols, this->nrows, this->xres);
   buffer = raster.buffer;
   circular = raster.circular;
+  aoi = raster.aoi;
   set_nbands(raster.nBands);
   band_names = raster.band_names;
   nodata = raster.nodata;
@@ -254,6 +255,7 @@ void Raster::set_chunk(const Chunk& chunk)
 {
   buffer = std::ceil(chunk.buffer/xres); // buffer in pixel
   circular = chunk.shape == ShapeType::CIRCLE;
+  aoi = chunk.aoi;
 
   //print("Chunk %.1lf %.1lf %.1lf %.1lf (+%.1lf m)\n", chunk.xmin, chunk.xmax, chunk.ymin, chunk.ymax, chunk.buffer);
 
@@ -479,6 +481,10 @@ bool Raster::write()
             float distance = std::sqrt(dx*dx+dy*dy);
             if (distance > chunk_hwidth) val = NA_F32_RASTER;
           }
+
+          // Stripping the buffer only cuts a rectangular frame. The pixels the buffer points fed
+          // outside the area of interest are still there and must be discarded as well
+          if (aoi != nullptr && !aoi->contains(x_from_col(col), y_from_row(row))) val = NA_F32_RASTER;
 
           data_no_buffer[modifiedIndex] = val;
         }

@@ -112,6 +112,20 @@ pipeline.set_nested_strategy(ncores1=2, ncores2=4)
 - `reader_circles()` - Read points within circular areas
 - `reader_rectangles()` - Read points within rectangular areas
 
+Every reader accepts an `aoi` argument clipping the point cloud to an arbitrary area of interest. It
+takes a WKT `POLYGON`/`MULTIPOLYGON` string, any object exposing a `wkt` attribute such as a shapely
+geometry, or nested lists of coordinates. Coordinates are read in the CRS of the point cloud, no
+reprojection is performed. Contrary to `reader_circles()` and `reader_rectangles()` the area of
+interest does not define the chunks, it clips whatever chunking is in use:
+
+```python
+aoi = "POLYGON((273357 5274357, 273500 5274357, 273500 5274643, 273357 5274643, 273357 5274357))"
+pipeline = pylasr.reader_coverage(aoi=aoi) + pylasr.rasterize(res=2, window=2)
+
+# rings, one more level of nesting for a multipolygon
+pipeline = pylasr.reader_coverage(aoi=[[[273357, 5274357], [273500, 5274357], [273500, 5274643], [273357, 5274357]]])
+```
+
 ### Classification & Filtering
 - `classify_with_sor()` - Statistical Outlier Removal classification
 - `classify_with_ivf()` - Isolated Voxel Filter classification  

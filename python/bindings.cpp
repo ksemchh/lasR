@@ -27,6 +27,75 @@ py::dict get_stage_info(api::Pipeline pipeline) {
     return info;
 }
 
+std::string coordinate_to_wkt(double value) {
+    char buffer[32];
+    snprintf(buffer, sizeof(buffer), "%.17g", value);
+    return std::string(buffer);
+}
+
+std::string ring_to_wkt(const std::vector<std::vector<double>>& ring) {
+    std::string wkt = "(";
+    for (size_t i = 0; i < ring.size(); i++) {
+        if (ring[i].size() < 2)
+            throw std::invalid_argument("a vertex of the area of interest needs two coordinates");
+        if (i > 0) wkt += ", ";
+        wkt += coordinate_to_wkt(ring[i][0]) + " " + coordinate_to_wkt(ring[i][1]);
+    }
+    return wkt + ")";
+}
+
+std::string rings_to_wkt(const std::vector<std::vector<std::vector<double>>>& rings) {
+    std::string wkt = "(";
+    for (size_t i = 0; i < rings.size(); i++) {
+        if (i > 0) wkt += ", ";
+        wkt += ring_to_wkt(rings[i]);
+    }
+    return wkt + ")";
+}
+
+// How deep the nested sequences go. A ring of vertices is 2, the rings of a polygon 3, the polygons
+// of a multipolygon 4
+int nesting_depth(py::handle object) {
+    int depth = 0;
+    while (py::isinstance<py::sequence>(object) && !py::isinstance<py::str>(object)) {
+        py::sequence sequence = py::reinterpret_borrow<py::sequence>(object);
+        if (sequence.size() == 0) break;
+        depth++;
+        object = sequence[0];
+    }
+    return depth;
+}
+
+// The area of interest is accepted as WKT, as anything exposing a 'wkt' attribute such as a shapely
+// geometry, or as nested lists of coordinates: one level of rings for a polygon, two for a multipolygon
+std::string extract_aoi(py::object aoi) {
+    if (aoi.is_none()) return "";
+
+    try {
+        if (py::isinstance<py::str>(aoi)) return aoi.cast<std::string>();
+        if (py::hasattr(aoi, "wkt")) return aoi.attr("wkt").cast<std::string>();
+
+        int depth = nesting_depth(aoi);
+
+        if (depth == 3)
+            return "POLYGON" + rings_to_wkt(aoi.cast<std::vector<std::vector<std::vector<double>>>>());
+
+        if (depth == 4) {
+            auto polygons = aoi.cast<std::vector<std::vector<std::vector<std::vector<double>>>>>();
+            std::string wkt = "MULTIPOLYGON(";
+            for (size_t i = 0; i < polygons.size(); i++) {
+                if (i > 0) wkt += ", ";
+                wkt += rings_to_wkt(polygons[i]);
+            }
+            return wkt + ")";
+        }
+
+        throw std::invalid_argument("nested lists must be " + std::to_string(depth) + " levels deep, expected 3 for a polygon or 4 for a multipolygon");
+    } catch (const std::exception& e) {
+        throw py::value_error(std::string("aoi must be a WKT string, a geometry or nested lists of coordinates: ") + e.what());
+    }
+}
+
 std::string extract_uid(py::object connect_uid) {
     try {
         if (py::isinstance<api::Pipeline>(connect_uid)) {
@@ -412,19 +481,28 @@ PYBIND11_MODULE(pylasr, m) {
           py::arg("matrix"), py::arg("check") = true);
 
     // Readers
-    m.def("reader_coverage", &api::reader_coverage,
+    m.def("reader_coverage", [](std::vector<std::string> filter, std::string select, int depth, py::object aoi) {
+        return api::reader_coverage(filter, select, depth, extract_aoi(aoi));
+    },
           "Read points from coverage area",
-          py::arg("filter") = std::vector<std::string>{""}, py::arg("select") = "*", py::arg("depth") = -1);
+          py::arg("filter") = std::vector<std::string>{""}, py::arg("select") = "*", py::arg("depth") = -1,
+          py::arg("aoi") = py::none());
 
-    m.def("reader_circles", &api::reader_circles,
+    m.def("reader_circles", [](std::vector<double> xc, std::vector<double> yc, std::vector<double> r, std::vector<std::string> filter, std::string select, int depth, py::object aoi) {
+        return api::reader_circles(xc, yc, r, filter, select, depth, extract_aoi(aoi));
+    },
           "Read points from circular areas",
           py::arg("xc"), py::arg("yc"), py::arg("r"),
-          py::arg("filter") = std::vector<std::string>{""}, py::arg("select") = "*", py::arg("depth") = -1);
+          py::arg("filter") = std::vector<std::string>{""}, py::arg("select") = "*", py::arg("depth") = -1,
+          py::arg("aoi") = py::none());
 
-    m.def("reader_rectangles", &api::reader_rectangles,
+    m.def("reader_rectangles", [](std::vector<double> xmin, std::vector<double> ymin, std::vector<double> xmax, std::vector<double> ymax, std::vector<std::string> filter, std::string select, int depth, py::object aoi) {
+        return api::reader_rectangles(xmin, ymin, xmax, ymax, filter, select, depth, extract_aoi(aoi));
+    },
           "Read points from rectangular areas",
           py::arg("xmin"), py::arg("ymin"), py::arg("xmax"), py::arg("ymax"),
-          py::arg("filter") = std::vector<std::string>{""}, py::arg("select") = "*", py::arg("depth") = -1);
+          py::arg("filter") = std::vector<std::string>{""}, py::arg("select") = "*", py::arg("depth") = -1,
+          py::arg("aoi") = py::none());
 
     // Local maxima
     m.def("local_maximum", &api::local_maximum,
