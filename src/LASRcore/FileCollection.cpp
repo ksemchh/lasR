@@ -713,17 +713,25 @@ bool FileCollection::set_chunk_size(double size)
 
     chunk_size = size;
 
-    // Tile the area of interest rather than the whole collection: a small area of interest in a
-    // large coverage becomes a handful of chunks instead of a grid of mostly empty ones.
-    double gxmin = (aoi != nullptr) ? MAX(xmin, aoi->xmin()) : xmin;
-    double gymin = (aoi != nullptr) ? MAX(ymin, aoi->ymin()) : ymin;
-    double gxmax = (aoi != nullptr) ? MIN(xmax, aoi->xmax()) : xmax;
-    double gymax = (aoi != nullptr) ? MIN(ymax, aoi->ymax()) : ymax;
+    // Each polygon is tiled in its own bounding box. Tiling the bounding box of the whole area of
+    // interest instead would walk a grid spanning the gaps between distant polygons.
+    std::vector<Rectangle> extents;
+    if (aoi == nullptr)
+      extents.emplace_back(xmin, ymin, xmax, ymax);
+    else
+      for (const auto q : queries) extents.emplace_back(q->xmin(), q->ymin(), q->xmax(), q->ymax());
 
     std::vector<Shape*> tiles;
 
-    if (gxmin <= gxmax && gymin <= gymax)
+    for (const auto& extent : extents)
     {
+      double gxmin = MAX(xmin, extent.xmin());
+      double gymin = MAX(ymin, extent.ymin());
+      double gxmax = MIN(xmax, extent.xmax());
+      double gymax = MIN(ymax, extent.ymax());
+
+      if (gxmin > gxmax || gymin > gymax) continue;
+
       Grid grid(gxmin, gymin, gxmax, gymax, chunk_size);
       for (int i = 0 ; i < grid.get_ncells() ; i++)
       {
