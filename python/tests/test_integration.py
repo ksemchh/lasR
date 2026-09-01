@@ -4,6 +4,7 @@ Integration tests for pylasr using actual data processing workflows
 """
 
 import os
+import glob
 import shutil
 import sys
 import tempfile
@@ -329,6 +330,29 @@ class TestAreaOfInterest(unittest.TestCase):
         holed = self.npoints([outer, inner])
         hole = self.npoints([inner])
         self.assertEqual(holed + hole, self.npoints())
+
+    def test_aoi_chunking_does_not_change_the_points(self):
+        """A chunk size tiles the area of interest instead of being refused"""
+        aoi = self.box(self.XMIN, self.YMIN, self.XMID, self.YMAX)
+        pipeline = pylasr.reader_polygons(aoi=aoi) + pylasr.summarise()
+        pipeline.set_chunk(100)
+        result = pipeline.execute([self.las])
+        self.assertTrue(result["success"], "Pipeline execution failed")
+        self.assertEqual(result["data"][0]["summary"]["npoints"], self.npoints(aoi))
+
+    def test_aoi_chunking_tiles_the_rasters(self):
+        """The tiles of a chunked area of interest are written one by one"""
+        aoi = self.box(self.XMIN, self.YMIN, self.XMID, self.YMAX)
+        temp_dir = tempfile.mkdtemp()
+        try:
+            pipeline = pylasr.reader_polygons(aoi=aoi) + pylasr.rasterize(
+                res=2, window=2, ofile=os.path.join(temp_dir, "*_chm.tif")
+            )
+            pipeline.set_chunk(100)
+            self.assertTrue(pipeline.execute([self.las])["success"], "Pipeline execution failed")
+            self.assertGreater(len(glob.glob(os.path.join(temp_dir, "*.tif"))), 1)
+        finally:
+            shutil.rmtree(temp_dir)
 
     def test_aoi_outside_the_data_returns_nothing(self):
         """An area of interest that reaches no file is not an error"""

@@ -703,7 +703,9 @@ bool FileCollection::set_chunk_size(double size)
 
   if (size > 0)
   {
-    if (queries.size() > 0)
+    // The queries of an area of interest are the bounding boxes of its polygons: they are ours to
+    // tile. Any other query is a region the user asked for and must be read as it is.
+    if (queries.size() > 0 && aoi == nullptr)
     {
       last_error = "Impossible to set chunk size with queries";
       return false;
@@ -711,16 +713,37 @@ bool FileCollection::set_chunk_size(double size)
 
     chunk_size = size;
 
-    Grid grid(xmin, ymin, xmax, ymax, chunk_size);
-    for (int i = 0 ; i < grid.get_ncells() ; i++)
-    {
-      double x = grid.x_from_cell(i);
-      double y = grid.y_from_cell(i);
-      double hsize = size/2;
+    // Tile the area of interest rather than the whole collection: a small area of interest in a
+    // large coverage becomes a handful of chunks instead of a grid of mostly empty ones.
+    double gxmin = (aoi != nullptr) ? MAX(xmin, aoi->xmin()) : xmin;
+    double gymin = (aoi != nullptr) ? MAX(ymin, aoi->ymin()) : ymin;
+    double gxmax = (aoi != nullptr) ? MIN(xmax, aoi->xmax()) : xmax;
+    double gymax = (aoi != nullptr) ? MIN(ymax, aoi->ymax()) : ymax;
 
-      if (file_index.has_overlap(x-hsize, y-hsize, x+hsize, y+hsize))
-        add_query(x-hsize, y-hsize, x+hsize, y+hsize);
+    std::vector<Shape*> tiles;
+
+    if (gxmin <= gxmax && gymin <= gymax)
+    {
+      Grid grid(gxmin, gymin, gxmax, gymax, chunk_size);
+      for (int i = 0 ; i < grid.get_ncells() ; i++)
+      {
+        double x = grid.x_from_cell(i);
+        double y = grid.y_from_cell(i);
+        double hsize = size/2;
+
+        if (!file_index.has_overlap(x-hsize, y-hsize, x+hsize, y+hsize)) continue;
+        if (aoi != nullptr && !aoi->intersects(x-hsize, y-hsize, x+hsize, y+hsize)) continue;
+
+        tiles.push_back(new Rectangle(x-hsize, y-hsize, x+hsize, y+hsize));
+      }
     }
+
+    // A grid reaching nothing leaves the queries untouched: an area of interest outside the
+    // collection keeps its own empty chunk instead of falling back to a chunk per file.
+    if (tiles.empty()) return true;
+
+    for (auto p : queries) delete p;
+    queries = tiles;
   }
 
   return true;

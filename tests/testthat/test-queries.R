@@ -250,8 +250,14 @@ test_that("an area of interest masks the raster and drives the chunking",
   cropped <- terra::crop(u, terra::ext(273500, 273643, 5274357, 5274500))
   expect_equal(sum(!is.na(cropped[])), 0L)
 
-  # the polygons are queries: they chunk the coverage themselves and refuse another chunking
-  expect_error(exec(reader(aoi = concave) + summarise(), on = f, chunk = 100), "chunk size with queries")
+  # the polygons chunk the coverage themselves and a chunk size tiles them further
+  u <- exec(reader(aoi = concave) + summarise(), on = f, chunk = 100)
+  expect_equal(u$npoints, 53153)
+
+  # the tiles cover the area of interest only: the excluded quarter has no chunk at all
+  u <- exec(reader(aoi = concave) + rasterize(2, "zmax"), on = f, chunk = 100)
+  cropped <- terra::crop(u, terra::ext(273500, 273643, 5274357, 5274500))
+  expect_equal(sum(!is.na(cropped[])), 0L)
 })
 
 test_that("an area of interest clips the vector outputs",
