@@ -2,6 +2,7 @@
 #include <vector>
 
 #include "api.h"
+#include "Shape.h"
 
 namespace api
 {
@@ -296,7 +297,7 @@ Pipeline rasterize_triangulation(std::string connect_uid, double res, std::strin
   return Pipeline(s);
 }
 
-Pipeline reader_coverage(std::vector<std::string> filter, std::string select, int depth, std::string aoi)
+Pipeline reader_coverage(std::vector<std::string> filter, std::string select, int depth)
 {
   Stage s("reader");
 
@@ -304,12 +305,11 @@ Pipeline reader_coverage(std::vector<std::string> filter, std::string select, in
     filter.push_back("-depth " + std::to_string(depth));
 
   s.set("filter", filter);
-  if (!aoi.empty()) s.set("aoi", aoi);
 
   return Pipeline(s);
 }
 
-Pipeline reader_circles(std::vector<double> xc, std::vector<double> yc, std::vector<double> r, std::vector<std::string> filter, std::string select, int depth, std::string aoi)
+Pipeline reader_circles(std::vector<double> xc, std::vector<double> yc, std::vector<double> r, std::vector<std::string> filter, std::string select, int depth)
 {
   if (xc.size() != yc.size())
     throw std::invalid_argument("xc and yc must have the same length");
@@ -332,12 +332,11 @@ Pipeline reader_circles(std::vector<double> xc, std::vector<double> yc, std::vec
   s.set("xcenter", xc);
   s.set("ycenter", yc);
   s.set("radius", r);
-  if (!aoi.empty()) s.set("aoi", aoi);
 
   return Pipeline(s);
 }
 
-Pipeline reader_rectangles(std::vector<double> xmin, std::vector<double> ymin, std::vector<double> xmax, std::vector<double> ymax, std::vector<std::string> filter, std::string select, int depth, std::string aoi)
+Pipeline reader_rectangles(std::vector<double> xmin, std::vector<double> ymin, std::vector<double> xmax, std::vector<double> ymax, std::vector<std::string> filter, std::string select, int depth)
 {
   size_t n = xmin.size();
   if (ymin.size() != n || xmax.size() != n || ymax.size() != n)
@@ -352,7 +351,32 @@ Pipeline reader_rectangles(std::vector<double> xmin, std::vector<double> ymin, s
   s.set("xmax", xmax);
   s.set("ymin", ymin);
   s.set("ymax", ymax);
-  if (!aoi.empty()) s.set("aoi", aoi);
+
+  return Pipeline(s);
+}
+
+Pipeline reader_polygons(std::string aoi, std::vector<std::string> filter, std::string select, int depth)
+{
+  if (aoi.empty())
+    throw std::invalid_argument("an area of interest is required");
+
+  // The area of interest does not drive the chunking. Query the bounding box of each of its parts
+  // so the chunks match the polygons, and let the area of interest clip them.
+  std::vector<double> xmin, ymin, xmax, ymax;
+  std::string error;
+  if (!wkt_part_bboxes(aoi, xmin, ymin, xmax, ymax, error))
+    throw std::invalid_argument(error);
+
+  if (depth >= 0)
+    filter.push_back("-depth " + std::to_string(depth));
+
+  Stage s("reader");
+  s.set("filter", filter);
+  s.set("xmin", xmin);
+  s.set("xmax", xmax);
+  s.set("ymin", ymin);
+  s.set("ymax", ymax);
+  s.set("aoi", aoi);
 
   return Pipeline(s);
 }

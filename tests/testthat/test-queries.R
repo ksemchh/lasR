@@ -232,11 +232,11 @@ test_that("an area of interest can be given as coordinate rings",
   u <- exec(reader(aoi = list(ring)) + summarise(), on = f)
   expect_equal(u$npoints, 29847)
 
-  expect_error(exec(reader(aoi = "POLYGON((0 0, 1 1") + summarise(), on = f), "Invalid area of interest")
+  expect_error(exec(reader(aoi = "POLYGON((0 0, 1 1") + summarise(), on = f), "cannot parse the geometry")
   expect_error(exec(reader(aoi = "POINT(0 0)") + summarise(), on = f), "POLYGON or a MULTIPOLYGON")
 })
 
-test_that("an area of interest masks the raster and survives the chunking",
+test_that("an area of interest masks the raster and drives the chunking",
 {
   f <- system.file("extdata", "Topography.las", package = "lasR")
 
@@ -250,9 +250,8 @@ test_that("an area of interest masks the raster and survives the chunking",
   cropped <- terra::crop(u, terra::ext(273500, 273643, 5274357, 5274500))
   expect_equal(sum(!is.na(cropped[])), 0L)
 
-  # the area of interest does not drive the chunking, it clips whichever chunking is used
-  u <- exec(reader(aoi = concave) + summarise(), on = f, chunk = 100)
-  expect_equal(u$npoints, 53153)
+  # the polygons are queries: they chunk the coverage themselves and refuse another chunking
+  expect_error(exec(reader(aoi = concave) + summarise(), on = f, chunk = 100), "chunk size with queries")
 })
 
 test_that("an area of interest clips the vector outputs",

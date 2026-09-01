@@ -616,3 +616,60 @@ PolygonShape* PolygonShape::from_wkt(const std::string& wkt, std::string& error)
 
   return shape;
 }
+
+bool wkt_part_bboxes(const std::string& wkt, std::vector<double>& xmin, std::vector<double>& ymin, std::vector<double>& xmax, std::vector<double>& ymax, std::string& error)
+{
+  OGRGeometry* geometry = nullptr;
+  const char* text = wkt.c_str();
+
+  if (OGRGeometryFactory::createFromWkt(&text, nullptr, &geometry) != OGRERR_NONE || geometry == nullptr)
+  {
+    error = "cannot parse the geometry '" + wkt + "'";
+    return false;
+  }
+
+  std::vector<OGRGeometry*> parts;
+  OGRwkbGeometryType type = wkbFlatten(geometry->getGeometryType());
+
+  if (type == wkbPolygon)
+  {
+    parts.push_back(geometry);
+  }
+  else if (type == wkbMultiPolygon)
+  {
+    OGRMultiPolygon* multi = geometry->toMultiPolygon();
+    for (int i = 0 ; i < multi->getNumGeometries() ; i++)
+    {
+      OGRGeometry* part = multi->getGeometryRef(i);
+      if (wkbFlatten(part->getGeometryType()) == wkbPolygon) parts.push_back(part);
+    }
+  }
+  else
+  {
+    error = "the geometry must be a POLYGON or a MULTIPOLYGON";
+    OGRGeometryFactory::destroyGeometry(geometry);
+    return false;
+  }
+
+  for (const auto* part : parts)
+  {
+    if (part->IsEmpty()) continue;
+
+    OGREnvelope envelope;
+    part->getEnvelope(&envelope);
+    xmin.push_back(envelope.MinX);
+    ymin.push_back(envelope.MinY);
+    xmax.push_back(envelope.MaxX);
+    ymax.push_back(envelope.MaxY);
+  }
+
+  OGRGeometryFactory::destroyGeometry(geometry);
+
+  if (xmin.empty())
+  {
+    error = "the geometry has no polygon";
+    return false;
+  }
+
+  return true;
+}

@@ -481,28 +481,26 @@ PYBIND11_MODULE(pylasr, m) {
           py::arg("matrix"), py::arg("check") = true);
 
     // Readers
-    m.def("reader_coverage", [](std::vector<std::string> filter, std::string select, int depth, py::object aoi) {
-        return api::reader_coverage(filter, select, depth, extract_aoi(aoi));
-    },
+    m.def("reader_coverage", &api::reader_coverage,
           "Read points from coverage area",
-          py::arg("filter") = std::vector<std::string>{""}, py::arg("select") = "*", py::arg("depth") = -1,
-          py::arg("aoi") = py::none());
+          py::arg("filter") = std::vector<std::string>{""}, py::arg("select") = "*", py::arg("depth") = -1);
 
-    m.def("reader_circles", [](std::vector<double> xc, std::vector<double> yc, std::vector<double> r, std::vector<std::string> filter, std::string select, int depth, py::object aoi) {
-        return api::reader_circles(xc, yc, r, filter, select, depth, extract_aoi(aoi));
-    },
+    m.def("reader_circles", &api::reader_circles,
           "Read points from circular areas",
           py::arg("xc"), py::arg("yc"), py::arg("r"),
-          py::arg("filter") = std::vector<std::string>{""}, py::arg("select") = "*", py::arg("depth") = -1,
-          py::arg("aoi") = py::none());
+          py::arg("filter") = std::vector<std::string>{""}, py::arg("select") = "*", py::arg("depth") = -1);
 
-    m.def("reader_rectangles", [](std::vector<double> xmin, std::vector<double> ymin, std::vector<double> xmax, std::vector<double> ymax, std::vector<std::string> filter, std::string select, int depth, py::object aoi) {
-        return api::reader_rectangles(xmin, ymin, xmax, ymax, filter, select, depth, extract_aoi(aoi));
-    },
+    m.def("reader_rectangles", &api::reader_rectangles,
           "Read points from rectangular areas",
           py::arg("xmin"), py::arg("ymin"), py::arg("xmax"), py::arg("ymax"),
-          py::arg("filter") = std::vector<std::string>{""}, py::arg("select") = "*", py::arg("depth") = -1,
-          py::arg("aoi") = py::none());
+          py::arg("filter") = std::vector<std::string>{""}, py::arg("select") = "*", py::arg("depth") = -1);
+
+    m.def("reader_polygons", [](py::object aoi, std::vector<std::string> filter, std::string select, int depth) {
+        return api::reader_polygons(extract_aoi(aoi), filter, select, depth);
+    },
+          "Read points from polygonal areas. The bounding box of each polygon drives the chunking and the polygons clip the points.",
+          py::arg("aoi"),
+          py::arg("filter") = std::vector<std::string>{""}, py::arg("select") = "*", py::arg("depth") = -1);
 
     // Local maxima
     m.def("local_maximum", &api::local_maximum,

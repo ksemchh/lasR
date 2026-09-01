@@ -956,7 +956,8 @@ rasterize = function(res, operators = "max", filter = "", ofile = temptif(), ...
 #' nothing if it is not associated to another processing stage.
 #' It only initializes the pipeline. `reader()` is the main function that dispatches into to other
 #' functions. `reader_coverage()` processes the entire point cloud. `reader_circles()` and
-#' `reader_rectangles()` read and process only some selected regions of interest. If the chosen
+#' `reader_rectangles()` read and process only some selected regions of interest. `reader_polygons()`
+#' does the same with arbitrary polygons instead of rectangles. If the chosen
 #' reader has no options i.e. using `reader()` it can be omitted.
 #'
 #' Supported input formats: LAS, LAZ, COPC, PCD, and EPT (Entwine Point Tiles).
@@ -967,11 +968,12 @@ rasterize = function(res, operators = "max", filter = "", ofile = temptif(), ...
 #' @template param-filter
 #' @param xc,yc,r numeric. Circle centres and radius or radii.
 #' @param xmin,ymin,xmax,ymax numeric. Coordinates of the rectangles
-#' @param aoi Area of interest clipping the point cloud. Either a WKT `POLYGON`/`MULTIPOLYGON`
-#' string, an `sf`/`sfc` object, or a list of coordinate rings given as two-column matrices, one
-#' list per polygon for a multipolygon. Coordinates are expected in the CRS of the point cloud: no
-#' reprojection is performed. Contrary to `reader_circles()` and `reader_rectangles()` the area of
-#' interest does not define the chunks, it clips whatever chunking is in use.
+#' @param aoi Area of interest read and processed by `reader_polygons()`. Either a WKT
+#' `POLYGON`/`MULTIPOLYGON` string, an `sf`/`sfc` object, or a list of coordinate rings given as
+#' two-column matrices, one list per polygon for a multipolygon. Coordinates are expected in the CRS
+#' of the point cloud: no reprojection is performed. The bounding box of each polygon defines a
+#' chunk, like the queries of `reader_rectangles()`, and the polygons clip the points of their own
+#' chunk.
 #' @param select character. Unused. Reserved for future versions.
 #' @param depth integer. Maximum octree depth level for COPC or EPT data. Depth is 0-indexed.
 #' When NULL (default), all levels are read.
@@ -1012,38 +1014,49 @@ reader = function(filter = "", select = "*", depth = NULL, aoi = NULL, ...)
 
   # xc/yc/r and xmin/ymin/xmax/ymax flow through ... — do not pass them positionally,
   # otherwise they spill into copc_depth/ept_depth slots and corrupt argument matching.
-  if (circle) return(reader_circles(filter = filter, select = select, depth = depth, aoi = aoi, ...))
-  if (rectangle) return(reader_rectangles(filter = filter, select = select, depth = depth, aoi = aoi, ...))
-  return(reader_coverage(filter = filter, select = select, depth = depth, aoi = aoi, ...))
+  if (circle) return(reader_circles(filter = filter, select = select, depth = depth, ...))
+  if (rectangle) return(reader_rectangles(filter = filter, select = select, depth = depth, ...))
+  if (!is.null(aoi)) return(reader_polygons(aoi, filter = filter, select = select, depth = depth, ...))
+  return(reader_coverage(filter = filter, select = select, depth = depth, ...))
 }
 
 #' @export
 #' @rdname reader
-reader_coverage = function(filter = "", select = "*", depth = NULL, aoi = NULL, ...)
+reader_coverage = function(filter = "", select = "*", depth = NULL, ...)
 {
   validate_filter(filter, TRUE)
   depth <- resolve_depth(depth, ...)
   if (is.null(depth)) depth = -1
-  .APISTAGES$reader_coverage(filter, select, depth, resolve_aoi(aoi))
+  .APISTAGES$reader_coverage(filter, select, depth)
 }
 
 #' @export
 #' @rdname reader
-reader_circles = function(xc, yc, r, filter = "", select = "*", depth = NULL, aoi = NULL, ...)
+reader_circles = function(xc, yc, r, filter = "", select = "*", depth = NULL, ...)
 {
   validate_filter(filter, TRUE)
   depth <- resolve_depth(depth, ...)
   if (is.null(depth)) depth = -1
-  .APISTAGES$reader_circles(xc, yc, r, filter, select, depth, resolve_aoi(aoi))
+  .APISTAGES$reader_circles(xc, yc, r, filter, select, depth)
 }
 
 #' @export
 #' @rdname reader
-reader_rectangles = function(xmin, ymin, xmax, ymax, filter = "", select = "*", depth = NULL, aoi = NULL, ...)
+reader_rectangles = function(xmin, ymin, xmax, ymax, filter = "", select = "*", depth = NULL, ...)
 {
   depth <- resolve_depth(depth, ...)
   if (is.null(depth)) depth = -1
-  .APISTAGES$reader_rectangles(xmin, ymin, xmax, ymax, filter, select, depth, resolve_aoi(aoi))
+  .APISTAGES$reader_rectangles(xmin, ymin, xmax, ymax, filter, select, depth)
+}
+
+#' @export
+#' @rdname reader
+reader_polygons = function(aoi, filter = "", select = "*", depth = NULL, ...)
+{
+  validate_filter(filter, TRUE)
+  depth <- resolve_depth(depth, ...)
+  if (is.null(depth)) depth = -1
+  .APISTAGES$reader_polygons(resolve_aoi(aoi), filter, select, depth)
 }
 
 #' Region growing

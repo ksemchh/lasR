@@ -283,7 +283,8 @@ class TestAreaOfInterest(unittest.TestCase):
             self.skipTest("Topography LAS file not found")
 
     def npoints(self, aoi=None):
-        pipeline = pylasr.reader_coverage(aoi=aoi) + pylasr.summarise()
+        reader = pylasr.reader_coverage() if aoi is None else pylasr.reader_polygons(aoi=aoi)
+        pipeline = reader + pylasr.summarise()
         result = pipeline.execute([self.las])
         self.assertTrue(result["success"], "Pipeline execution failed")
         return result["data"][0]["summary"]["npoints"]
