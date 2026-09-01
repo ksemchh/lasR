@@ -779,7 +779,7 @@ multichm = function(res = 1, ws = 3, min_height = 2, layer_thickness = 0.5, dist
 #'
 #' @param metrics Character vector. "min", "max" and "count" are accepted as well as many others
 #' (see \link{metric_engine}). If `NULL` nothing is computed.
-#' @param neighborhood Currently support only a "local_maximum" stage.
+#' @param neighborhood A stage producing tree tops, i.e. "local_maximum" or "multichm".
 #' @param k,r integer and numeric respectively for k-nearest neighbours and radius of the neighborhood
 #' sphere. If k is given and r is missing, computes with the knn, if r is given and k is missing
 #' computes with a sphere neighborhood, if k and r are given computes with the knn and a limit on the
@@ -799,7 +799,7 @@ multichm = function(res = 1, ws = 3, min_height = 2, layer_thickness = 0.5, dist
 neighborhood_metrics = function(neighborhood, metrics, k = 10, r = 0, ofile = tempgpkg())
 {
   nn = .APIOPERATIONS$get_stage_info(neighborhood)
-  if (nn$name != "local_maximum") stop("the stage must be a local_maximum stage")
+  if (!nn$name %in% c("local_maximum", "multichm")) stop("the stage must be a stage producing tree tops")
   ofile = normalizePath(ofile, mustWork = FALSE)
   .APISTAGES$neighborhood_metrics(nn[["uid"]], metrics, k, r, ofile)
 }

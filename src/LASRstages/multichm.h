@@ -11,7 +11,7 @@
 #include <utility>
 #include <vector>
 
-class LASRmultichm : public StageVector
+class LASRmultichm : public StageVector, public StageMaxima
 {
 public:
   LASRmultichm();
@@ -22,7 +22,7 @@ public:
   bool need_points() const override { return true; };
   bool set_parameters(const nlohmann::json&) override;
   std::string get_name() const override { return "multichm"; };
-  std::vector<PointLAS>& get_maxima() { return lm; };
+  std::vector<PointLAS>& get_maxima() override { return lm; };
   bool is_parallelized() const override { return true; };
 
   // multi-threading
