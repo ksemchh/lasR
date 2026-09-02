@@ -10,9 +10,8 @@ public:
   bool process(PointCloud*& las) override;
   bool connect(const std::list<std::unique_ptr<Stage>>&, const std::string& uuid) override;
 
-  // The interpolation keeps a value per point and indexes the points again, a coordinate pair and
-  // an index each. The buckets of that index follow the cell count, which the stage cannot know
-  double memory_per_point() const override { return sizeof(double) + sizeof(PointXYI) + sizeof(int); };
+  // The interpolated value it keeps per point. The index behind it belongs to the triangulation
+  double memory_per_point() const override { return sizeof(double); };
   bool set_parameters(const nlohmann::json&) override;
   std::string get_name() const override { return "transform_with"; }
   bool is_parallelized() const override { return true; };
