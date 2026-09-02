@@ -23,8 +23,7 @@ bool LASRlasreader::set_chunk(Chunk& chunk)
 
   lasio = new LASio();
 
-  // The spatial index can skip whole blocks, so the read is narrowed to the bounding box of the area
-  // of interest. A circular query is already narrower than its own box and is left alone
+  // A circular query is already narrower than its own box and is left alone
   double qxmin = chunk.xmin;
   double qymin = chunk.ymin;
   double qxmax = chunk.xmax;

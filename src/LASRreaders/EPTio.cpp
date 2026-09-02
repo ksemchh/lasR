@@ -365,9 +365,7 @@ void EPTio::load_hierarchy_page(const EPTkey& page_key, double qxmin, double qym
     if (nxmax < qxmin || nxmin > qxmax || nymax < qymin || nymin > qymax)
       continue;
 
-    // The bounding box of a concave area of interest spans nodes holding nothing that will be kept.
-    // Testing the node itself against the polygon avoids downloading them. Growing the node rather
-    // than the polygon keeps the buffer without offsetting the geometry
+    // Growing the node rather than the polygon keeps the buffer without offsetting the geometry
     if (aoi != nullptr && !aoi->intersects(nxmin - aoi_buffer, nymin - aoi_buffer, nxmax + aoi_buffer, nymax + aoi_buffer))
       continue;
 

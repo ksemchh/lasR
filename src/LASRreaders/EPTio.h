@@ -72,8 +72,7 @@ private:
   std::string base_path;
   std::string query_string;  // URL query params (e.g. ?token=...) for signed URLs
 
-  // Area of interest pruning the traversal, null when there is none, and the buffer the nodes are
-  // grown by before being tested against it
+  // Prunes the traversal, null when there is none, with the buffer the nodes are grown by
   std::shared_ptr<const PolygonShape> aoi;
   double aoi_buffer;
   bool remote;
