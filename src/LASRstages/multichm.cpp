@@ -190,7 +190,7 @@ float LASRmultichm::update_chm(bool peel, size_t& alive)
   size_t nalive = 0;
   size_t n = active.size();
 
-  #pragma omp parallel for num_threads(ncpu) reduction(max:zmax) reduction(+:nalive)
+  #pragma omp parallel for num_threads(ncpu)
   for (size_t a = 0 ; a < n ; a++)
   {
     int c = active[a];
@@ -209,13 +209,17 @@ float LASRmultichm::update_chm(bool peel, size_t& alive)
     }
 
     chm[c] = use_max ? run[k[c]-1] : percentile95(run, k[c]);
-
-    if (chm[c] > zmax) zmax = chm[c];
-    nalive += k[c];
   }
 
   size_t w = 0;
-  for (size_t a = 0 ; a < n ; a++) if (chm[active[a]] != NA_F32_RASTER) active[w++] = active[a];
+  for (size_t a = 0 ; a < n ; a++)
+  {
+    int c = active[a];
+    if (chm[c] == NA_F32_RASTER) continue;
+    if (chm[c] > zmax) zmax = chm[c];
+    nalive += k[c];
+    active[w++] = c;
+  }
   active.resize(w);
 
   alive = nalive;
