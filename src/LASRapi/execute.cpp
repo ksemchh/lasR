@@ -29,6 +29,10 @@
 
 #include "DrawflowParser.h"
 
+// The share of the memory the chunks may take. The rest covers what no stage can declare: the
+// allocator, the GDAL caches, the interpreter
+#define AUTO_CHUNK_SHARE 0.9
+
 #include "nlohmann/json.hpp"
 
 namespace api
@@ -163,7 +167,7 @@ ReturnType execute(const std::string& config_file)
       double bytes_per_point = pipeline.memory_per_point();
       if (!pipeline.is_streamable()) bytes_per_point += point_size;
       double bytes_per_area = pipeline.memory_per_area();
-      double budget = (double)ram/MAX(1, ncpu_outer_loop);
+      double budget = AUTO_CHUNK_SHARE*(double)ram/MAX(1, ncpu_outer_loop);
 
       log(flog, verbose, "  Memory per chunk: %.0lf MB\n", budget/1e6);
       log(flog, verbose, "  Memory per point: %.0lf bytes\n", bytes_per_point);
