@@ -28,6 +28,7 @@
 #include "FileCollection.h"
 
 #include "DrawflowParser.h"
+
 #include "nlohmann/json.hpp"
 
 namespace api
@@ -152,6 +153,27 @@ ReturnType execute(const std::string& config_file)
     bool is_parallelizable = pipeline.is_parallelizable();  // concurrent-files
 
     FileCollection* lascatalog = pipeline.get_catalog(); // the pipeline owns the catalog
+
+    // Chunks the user did not size are sized to fit in memory. Every stage declares what it holds
+    // per point and per square metre, the point cloud itself holds the points, and the memory is
+    // shared by the chunks held at once, which is the concurrent-files count and not the cores of
+    // the pipeline: a concurrent-points run reads one chunk at a time whatever its number of cores.
+    size_t point_size = lascatalog->get_point_size();
+    unsigned long long ram = api::getAvailableRAM()*1000000ull;
+    if (point_size > 0 && ram > 0)
+    {
+      // A streamable pipeline never holds the point cloud, only what its stages declare
+      double bytes_per_point = pipeline.memory_per_point();
+      if (!pipeline.is_streamable()) bytes_per_point += point_size;
+      double bytes_per_area = pipeline.memory_per_area();
+      double budget = (double)ram/MAX(1, ncpu_outer_loop);
+
+      log(flog, verbose, "  Memory per chunk: %.0lf MB\n", budget/1e6);
+      log(flog, verbose, "  Memory per point: %.0lf bytes\n", bytes_per_point);
+      log(flog, verbose, "  Memory per m2: %.1lf bytes\n", bytes_per_area);
+
+      if (!lascatalog->set_auto_chunk(budget, bytes_per_point, bytes_per_area)) throw std::runtime_error(last_error);
+    }
 
     int n = lascatalog->get_number_chunks();
 

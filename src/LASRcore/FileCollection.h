@@ -44,6 +44,9 @@ public:
   const PolygonShape* get_aoi() const { return aoi.get(); };
   bool set_noprocess(const std::vector<bool>& b);
   bool set_chunk_size(double size);
+  bool set_auto_chunk(double budget_bytes, double bytes_per_point, double bytes_per_area);
+  size_t estimate_points(double xmin, double ymin, double xmax, double ymax) const;
+  size_t get_point_size() const;
   bool get_chunk(int index, Chunk& chunk) const;
   int get_number_chunks() const;
   int get_number_files() const;
@@ -104,6 +107,8 @@ private:
   // queries, partial read
   FileCollectionIndex file_index;
   std::vector<Shape*> queries;
+
+  void tile_extent(double xmin, double ymin, double xmax, double ymax, double size, std::vector<Shape*>& tiles) const;
 
   // area of interest clipping every chunk. Shared because each thread copies the Engine and thus
   // the chunks it works on

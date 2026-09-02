@@ -4,6 +4,7 @@
 #include "error.h"
 #include "print.h"
 #include "Grid.h"
+#include "GridPartition.h"
 #include "PointSchema.h"
 
 // To read the header of files
@@ -62,6 +63,9 @@ static std::string filename_from_url(const std::string& url)
     name = name.substr(0, name.size() - 5);
   return name;
 }
+
+// A group of the spatial index is a node of its map and the heap block of its intervals
+#define GROUP_BYTES 64
 
 bool FileCollection::read(const std::vector<std::string>& files, bool progress)
 {
@@ -697,6 +701,37 @@ bool FileCollection::set_noprocess(const std::vector<bool>& b)
   return true;
 }
 
+void FileCollection::tile_extent(double exmin, double eymin, double exmax, double eymax, double size, std::vector<Shape*>& tiles) const
+{
+  double gxmin = MAX(xmin, exmin);
+  double gymin = MAX(ymin, eymin);
+  double gxmax = MIN(xmax, exmax);
+  double gymax = MIN(ymax, eymax);
+
+  if (gxmin > gxmax || gymin > gymax) return;
+
+  Grid grid(gxmin, gymin, gxmax, gymax, size);
+  for (int i = 0 ; i < grid.get_ncells() ; i++)
+  {
+    double x = grid.x_from_cell(i);
+    double y = grid.y_from_cell(i);
+    double hsize = size/2;
+
+    // The grid snaps to a lattice of its own resolution, so the tiles of the border overflow the
+    // extent. Clipping them keeps a tiled extent equal to the extent it replaces.
+    double txmin = MAX(x-hsize, gxmin);
+    double tymin = MAX(y-hsize, gymin);
+    double txmax = MIN(x+hsize, gxmax);
+    double tymax = MIN(y+hsize, gymax);
+
+    if (txmin >= txmax || tymin >= tymax) continue;
+    if (!file_index.has_overlap(txmin, tymin, txmax, tymax)) continue;
+    if (aoi != nullptr && !aoi->intersects(txmin, tymin, txmax, tymax)) continue;
+
+    tiles.push_back(new Rectangle(txmin, tymin, txmax, tymax));
+  }
+}
+
 bool FileCollection::set_chunk_size(double size)
 {
   chunk_size = 0;
@@ -715,36 +750,12 @@ bool FileCollection::set_chunk_size(double size)
 
     // Each polygon is tiled in its own bounding box. Tiling the bounding box of the whole area of
     // interest instead would walk a grid spanning the gaps between distant polygons.
-    std::vector<Rectangle> extents;
-    if (aoi == nullptr)
-      extents.emplace_back(xmin, ymin, xmax, ymax);
-    else
-      for (const auto q : queries) extents.emplace_back(q->xmin(), q->ymin(), q->xmax(), q->ymax());
-
     std::vector<Shape*> tiles;
 
-    for (const auto& extent : extents)
-    {
-      double gxmin = MAX(xmin, extent.xmin());
-      double gymin = MAX(ymin, extent.ymin());
-      double gxmax = MIN(xmax, extent.xmax());
-      double gymax = MIN(ymax, extent.ymax());
-
-      if (gxmin > gxmax || gymin > gymax) continue;
-
-      Grid grid(gxmin, gymin, gxmax, gymax, chunk_size);
-      for (int i = 0 ; i < grid.get_ncells() ; i++)
-      {
-        double x = grid.x_from_cell(i);
-        double y = grid.y_from_cell(i);
-        double hsize = size/2;
-
-        if (!file_index.has_overlap(x-hsize, y-hsize, x+hsize, y+hsize)) continue;
-        if (aoi != nullptr && !aoi->intersects(x-hsize, y-hsize, x+hsize, y+hsize)) continue;
-
-        tiles.push_back(new Rectangle(x-hsize, y-hsize, x+hsize, y+hsize));
-      }
-    }
+    if (aoi == nullptr)
+      tile_extent(xmin, ymin, xmax, ymax, size, tiles);
+    else
+      for (const auto q : queries) tile_extent(q->xmin(), q->ymin(), q->xmax(), q->ymax(), size, tiles);
 
     // A grid reaching nothing leaves the queries untouched: an area of interest outside the
     // collection keeps its own empty chunk instead of falling back to a chunk per file.
@@ -753,6 +764,135 @@ bool FileCollection::set_chunk_size(double size)
     for (auto p : queries) delete p;
     queries = tiles;
   }
+
+  return true;
+}
+
+size_t FileCollection::get_point_size() const
+{
+  return headers.empty() ? 0 : headers[0].schema.total_point_size;
+}
+
+size_t FileCollection::estimate_points(double qxmin, double qymin, double qxmax, double qymax) const
+{
+  // An EPT hierarchy knows exactly how many points the nodes of a query hold. Reading it costs a
+  // few JSON pages the reader fetches again later anyway.
+  if (headers.size() == 1 && headers[0].signature == "EPTF")
+  {
+    try
+    {
+      EPTio reader;
+      reader.open(files[0].string());
+      reader.query({files[0].string()}, {}, qxmin, qymin, qxmax, qymax, 0, false, {});
+      return reader.get_queried_points();
+    }
+    catch (const std::exception&)
+    {
+      // fall back on the headers
+    }
+  }
+
+  // Elsewhere the count is prorated: the points of a file are assumed to be spread evenly over its
+  // bounding box.
+  double npoints = 0;
+  for (const auto& h : headers)
+  {
+    double area = (h.max_x - h.min_x) * (h.max_y - h.min_y);
+    if (area <= 0 || h.number_of_point_records == 0) continue;
+
+    double ox = MIN(qxmax, h.max_x) - MAX(qxmin, h.min_x);
+    double oy = MIN(qymax, h.max_y) - MAX(qymin, h.min_y);
+    if (ox <= 0 || oy <= 0) continue;
+
+    npoints += (double)h.number_of_point_records * (ox*oy) / area;
+  }
+
+  return (size_t)npoints;
+}
+
+bool FileCollection::set_auto_chunk(double budget_bytes, double bytes_per_point, double bytes_per_area)
+{
+  // The user sized the chunks, or there is nothing to size
+  if (chunk_size > 0 || budget_bytes <= 0 || queries.empty()) return true;
+
+  std::vector<Shape*> tiles;
+  bool tiled = false;
+
+  for (const auto q : queries)
+  {
+    // A circular query carries its shape to the point filter: tiling it with rectangles would
+    // read the corners it is meant to exclude.
+    if (q->type() != ShapeType::RECTANGLE)
+    {
+      tiles.push_back(new Rectangle(q->xmin(), q->ymin(), q->xmax(), q->ymax()));
+      continue;
+    }
+
+    double width  = q->xmax() - q->xmin();
+    double height = q->ymax() - q->ymin();
+    double area = width*height;
+    size_t npoints = estimate_points(q->xmin(), q->ymin(), q->xmax(), q->ymax());
+
+    if (area <= 0 || npoints == 0)
+    {
+      tiles.push_back(new Rectangle(q->xmin(), q->ymin(), q->xmax(), q->ymax()));
+      continue;
+    }
+
+    // What a chunk costs per square metre it covers: the points it holds at the density of the
+    // query, plus what the stages hold for the area itself.
+    double density = (double)npoints/area;
+    double bytes_per_m2 = density*bytes_per_point + bytes_per_area;
+
+    // A point cloud that is held is also indexed. The index groups the points by cell of a
+    // resolution it picks from the density, and holds a group for every cell the points reach and
+    // an interval for every run of points inside it, at worst one per point.
+    if (bytes_per_point > 0)
+    {
+      double index_res = GridPartition::guess_resolution_from_density(density);
+      double cells_per_m2 = 1.0/(index_res*index_res);
+      bytes_per_m2 += MIN(density, cells_per_m2)*GROUP_BYTES + density*sizeof(Interval);
+    }
+    if (bytes_per_m2 <= 0)
+    {
+      tiles.push_back(new Rectangle(q->xmin(), q->ymin(), q->xmax(), q->ymax()));
+      continue;
+    }
+
+    // A chunk reads its own extent plus the buffer around it, and is measured on that read
+    double affordable_area = budget_bytes/bytes_per_m2;
+
+    if ((width + 2*buffer)*(height + 2*buffer) <= affordable_area)
+    {
+      tiles.push_back(new Rectangle(q->xmin(), q->ymin(), q->xmax(), q->ymax()));
+      continue;
+    }
+
+    double side = std::sqrt(affordable_area) - 2*buffer;
+
+    // Past this a chunk reads four times the points it owns. Shrinking it further buys less memory
+    // than it costs in neighbourhoods read over and over, so the budget gives way to the buffer.
+    if (side < 2*buffer)
+    {
+      side = 2*buffer;
+      double held = bytes_per_m2*(side + 2*buffer)*(side + 2*buffer);
+      warning("Chunks of %.0lf m hold %.0lf MB, more than the %.0lf MB they can afford. Reduce the buffer, the number of concurrent files, or the resolution.\n", side, held/1e6, budget_bytes/1e6);
+    }
+
+    size_t before = tiles.size();
+    tile_extent(q->xmin(), q->ymin(), q->xmax(), q->ymax(), side, tiles);
+
+    if (tiles.size() > before + 1) tiled = true;
+  }
+
+  if (!tiled)
+  {
+    for (auto p : tiles) delete p;
+    return true;
+  }
+
+  for (auto p : queries) delete p;
+  queries = tiles;
 
   return true;
 }

@@ -52,6 +52,9 @@ public:
              double buffer, bool circle,
              std::vector<std::string> filters);
 
+  // Points held by the nodes the last query selected
+  size_t get_queried_points() const { return total_points; };
+
 private:
   void parse_ept_json();
   void traverse_hierarchy(double qxmin, double qymin, double qxmax, double qymax);
