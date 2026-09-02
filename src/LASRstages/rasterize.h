@@ -18,9 +18,7 @@ public:
   bool connect(const std::list<std::unique_ptr<Stage>>&, const std::string& uuid) override;
   std::string get_name() const override { return "rasterize"; };
 
-  // A windowed rasterization groups the points by cell before reading them back. The group of a
-  // cell is a map node, a vector and the intervals of the points it holds, and there is one per
-  // cell the points reach.
+  // A windowed rasterization also groups the points by cell
   double memory_per_area() const override
   {
     double memory = StageRaster::memory_per_area();

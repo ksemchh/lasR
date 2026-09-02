@@ -38,9 +38,7 @@ public:
   // multi-threading
   bool is_parallelizable() const override { return true; };
 
-  // An index of the points it walks, and the key of every voxel it has already filled, of which
-  // there are no more than points. The dense registry it falls back on follows the vertical extent
-  // of the chunk, which the stage does not know, and is not counted.
+  // An index per point and the key of every voxel already filled, of which there are no more
   double memory_per_point() const override { return sizeof(int) + sizeof(int); };
   LASRsamplingpoisson* clone() const override { return new LASRsamplingpoisson(*this); };
 
@@ -61,9 +59,6 @@ public:
   // multi-threading
   bool is_parallelizable() const override { return true; };
 
-  // An index of the points it walks and the coordinates it keeps for the point of a voxel. The
-  // dense registry it falls back on follows the vertical extent of the chunk, which the stage does
-  // not know, and is not counted.
   double memory_per_point() const override { return sizeof(int) + 3*sizeof(double); };
   LASRsamplingvoxels* clone() const override { return new LASRsamplingvoxels(*this); };
 
@@ -86,10 +81,9 @@ public:
   // multi-threading
   bool is_parallelizable() const override { return true; };
 
-  // An index of the points it walks
   double memory_per_point() const override { return sizeof(int); };
 
-  // A bit for every pixel of the grid it fills
+  // A bit per pixel of the grid
   double memory_per_area() const override { return res > 0 ? 0.125/(res*res) : 0; };
   LASRsamplingpixels* clone() const override { return new LASRsamplingpixels(*this); };
 

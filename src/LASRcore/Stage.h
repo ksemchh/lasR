@@ -93,8 +93,7 @@ public:
   virtual bool use_rcapi() const { return false; };
   virtual double need_buffer() const { return 0; };
 
-  // Bytes the stage holds for a chunk, per point it reads and per square metre it covers. The
-  // sizing of a chunk is the sum of them, so a stage that holds nothing declares nothing.
+  // Bytes held for a chunk, per point read and per m2 covered. Summed over the pipeline to size it
   virtual double memory_per_point() const { return 0; };
   virtual double memory_per_area() const { return 0; };
   virtual bool need_points() const { return true; };
@@ -217,7 +216,6 @@ public:
   //void clear(bool last) override;
   const Raster& get_raster() { return raster; };
 
-  // The raster is a float per cell and per band
   double memory_per_area() const override { return raster.get_xres() > 0 ? 4.0*raster.get_nbands()/(raster.get_xres()*raster.get_yres()) : 0; };
 
 protected:

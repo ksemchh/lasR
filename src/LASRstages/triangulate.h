@@ -25,9 +25,7 @@ public:
   bool contour(std::vector<Edge>& edges) const;
   double need_buffer() const override { return 20.0; }
 
-  // Per triangulated point: 2 doubles of coordinates, an index into the point cloud, and the
-  // delaunator arrays, which for n points hold 2n triangles of 3 indices, as many halfedges, and
-  // three hull arrays of n. The filter of the stage only takes points away from that.
+  // Coordinates and an index per point, plus the delaunator arrays
   double memory_per_point() const override { return 2*sizeof(double) + sizeof(int) + 15*sizeof(std::size_t); }
   void clear(bool last) override;
   bool write() override;

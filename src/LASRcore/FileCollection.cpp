@@ -64,7 +64,7 @@ static std::string filename_from_url(const std::string& url)
   return name;
 }
 
-// A group of the spatial index is a node of its map and the heap block of its intervals
+// A group of the spatial index: a node of its map and the heap block of its intervals
 #define GROUP_BYTES 64
 
 bool FileCollection::read(const std::vector<std::string>& files, bool progress)
@@ -717,8 +717,7 @@ void FileCollection::tile_extent(double exmin, double eymin, double exmax, doubl
     double y = grid.y_from_cell(i);
     double hsize = size/2;
 
-    // The grid snaps to a lattice of its own resolution, so the tiles of the border overflow the
-    // extent. Clipping them keeps a tiled extent equal to the extent it replaces.
+    // The grid snaps to a lattice of its own resolution, so the border tiles overflow the extent
     double txmin = MAX(x-hsize, gxmin);
     double tymin = MAX(y-hsize, gymin);
     double txmax = MIN(x+hsize, gxmax);
@@ -757,8 +756,7 @@ bool FileCollection::set_chunk_size(double size)
     else
       for (const auto q : queries) tile_extent(q->xmin(), q->ymin(), q->xmax(), q->ymax(), size, tiles);
 
-    // A grid reaching nothing leaves the queries untouched: an area of interest outside the
-    // collection keeps its own empty chunk instead of falling back to a chunk per file.
+    // An area of interest outside the collection keeps its own empty chunk
     if (tiles.empty()) return true;
 
     for (auto p : queries) delete p;
@@ -775,8 +773,7 @@ size_t FileCollection::get_point_size() const
 
 size_t FileCollection::estimate_points(double qxmin, double qymin, double qxmax, double qymax) const
 {
-  // An EPT hierarchy knows exactly how many points the nodes of a query hold. Reading it costs a
-  // few JSON pages the reader fetches again later anyway.
+  // An EPT hierarchy knows exactly how many points the nodes of a query hold
   if (headers.size() == 1 && headers[0].signature == "EPTF")
   {
     try
@@ -792,8 +789,7 @@ size_t FileCollection::estimate_points(double qxmin, double qymin, double qxmax,
     }
   }
 
-  // Elsewhere the count is prorated: the points of a file are assumed to be spread evenly over its
-  // bounding box.
+  // Elsewhere the points of a file are assumed to spread evenly over its bounding box
   double npoints = 0;
   for (const auto& h : headers)
   {
@@ -812,7 +808,6 @@ size_t FileCollection::estimate_points(double qxmin, double qymin, double qxmax,
 
 bool FileCollection::set_auto_chunk(double budget_bytes, double bytes_per_point, double bytes_per_area)
 {
-  // The user sized the chunks, or there is nothing to size
   if (chunk_size > 0 || budget_bytes <= 0 || queries.empty()) return true;
 
   std::vector<Shape*> tiles;
@@ -820,8 +815,7 @@ bool FileCollection::set_auto_chunk(double budget_bytes, double bytes_per_point,
 
   for (const auto q : queries)
   {
-    // A circular query carries its shape to the point filter: tiling it with rectangles would
-    // read the corners it is meant to exclude.
+    // A circle carries its shape to the point filter. Rectangles would read the corners it excludes
     if (q->type() != ShapeType::RECTANGLE)
     {
       tiles.push_back(new Rectangle(q->xmin(), q->ymin(), q->xmax(), q->ymax()));
@@ -839,14 +833,10 @@ bool FileCollection::set_auto_chunk(double budget_bytes, double bytes_per_point,
       continue;
     }
 
-    // What a chunk costs per square metre it covers: the points it holds at the density of the
-    // query, plus what the stages hold for the area itself.
     double density = (double)npoints/area;
     double bytes_per_m2 = density*bytes_per_point + bytes_per_area;
 
-    // A point cloud that is held is also indexed. The index groups the points by cell of a
-    // resolution it picks from the density, and holds a group for every cell the points reach and
-    // an interval for every run of points inside it, at worst one per point.
+    // A point cloud that is held is also indexed
     if (bytes_per_point > 0)
     {
       double index_res = GridPartition::guess_resolution_from_density(density);
@@ -859,7 +849,7 @@ bool FileCollection::set_auto_chunk(double budget_bytes, double bytes_per_point,
       continue;
     }
 
-    // A chunk reads its own extent plus the buffer around it, and is measured on that read
+    // A chunk is measured on what it reads, its own extent plus the buffer
     double affordable_area = budget_bytes/bytes_per_m2;
 
     if ((width + 2*buffer)*(height + 2*buffer) <= affordable_area)
@@ -870,8 +860,7 @@ bool FileCollection::set_auto_chunk(double budget_bytes, double bytes_per_point,
 
     double side = std::sqrt(affordable_area) - 2*buffer;
 
-    // Past this a chunk reads four times the points it owns. Shrinking it further buys less memory
-    // than it costs in neighbourhoods read over and over, so the budget gives way to the buffer.
+    // Past this a chunk reads four times the points it owns, so the budget gives way to the buffer
     if (side < 2*buffer)
     {
       side = 2*buffer;
