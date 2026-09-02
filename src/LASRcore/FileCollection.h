@@ -45,7 +45,7 @@ public:
   bool set_noprocess(const std::vector<bool>& b);
   bool set_chunk_size(double size);
   bool set_auto_chunk(double budget_bytes, double bytes_per_point, double bytes_per_area);
-  size_t estimate_points(double xmin, double ymin, double xmax, double ymax) const;
+  size_t estimate_points(double xmin, double ymin, double xmax, double ymax);
   size_t get_point_size() const;
   bool get_chunk(int index, Chunk& chunk) const;
   int get_number_chunks() const;
@@ -109,6 +109,12 @@ private:
   std::vector<Shape*> queries;
 
   void tile_extent(double xmin, double ymin, double xmax, double ymax, double size, std::vector<Shape*>& tiles) const;
+  size_t count_points(double xmin, double ymin, double xmax, double ymax) const;
+  double peak_density(const Shape* query, double side) const;
+
+  // Nodes of the last EPT estimate, so a tile is counted in memory instead of traversed again
+  struct DensityNode { double xmin, ymin, xmax, ymax; size_t npoints; };
+  std::vector<DensityNode> density_nodes;
 
   // area of interest clipping every chunk. Shared because each thread copies the Engine and thus
   // the chunks it works on
