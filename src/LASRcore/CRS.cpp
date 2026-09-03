@@ -54,7 +54,8 @@ CRS::CRS(const std::string& str, bool err)
 
   CPLPushErrorHandler(CPLQuietErrorHandler);
 
-  if (oSRS.importFromWkt(wkt.c_str()) != OGRERR_NONE)
+  // May not be WKT but still something GDAL understands, such as "EPSG:3857+5703"
+  if (oSRS.importFromWkt(wkt.c_str()) != OGRERR_NONE && oSRS.SetFromUserInput(wkt.c_str()) != OGRERR_NONE)
   {
     char buffer[2048];
     snprintf(buffer, sizeof(buffer), "WKT string: %s", CPLGetLastErrorMsg());
@@ -104,6 +105,24 @@ bool CRS::is_feets() const
 bool CRS::is_geographic() const
 {
   return valid && oSRS.IsGeographic();
+}
+
+bool CRS::is_compound() const
+{
+  return valid && oSRS.IsCompound();
+}
+
+// A compound CRS names a vertical CRS, a 3D one such as EPSG:4979 carries ellipsoidal heights
+bool CRS::has_vertical() const
+{
+  return valid && (oSRS.IsCompound() || oSRS.GetAxesCount() == 3);
+}
+
+int CRS::get_vertical_epsg() const
+{
+  if (!is_compound()) return 0;
+  const char* code = oSRS.GetAuthorityCode("VERT_CS");
+  return (code != nullptr) ? atoi(code) : 0;
 }
 
 bool CRS::operator==(const CRS& other) const
@@ -204,3 +223,32 @@ bool reproject_bbox(const CRS& source, const CRS& target, double& xmin, double& 
   return true;
 }
 
+
+CRS make_compound(const CRS& horizontal, const CRS& vertical)
+{
+  if (!horizontal.is_valid() || !vertical.is_valid()) return CRS();
+  if (horizontal.is_compound()) return CRS();
+
+  OGRSpatialReference h = horizontal.get_crs();
+  OGRSpatialReference v = vertical.get_crs();
+  OGRSpatialReference compound;
+
+  std::string name = std::string(h.GetName() ? h.GetName() : "unknown") + " + " + (v.GetName() ? v.GetName() : "unknown");
+
+  CPLPushErrorHandler(CPLQuietErrorHandler);
+  OGRErr err = compound.SetCompoundCS(name.c_str(), &h, &v);
+  CPLPopErrorHandler();
+
+  if (err != OGRERR_NONE) return CRS();
+
+  char* pszWKT = nullptr;
+  char** papszOptions = nullptr;
+  papszOptions = CSLSetNameValue(papszOptions, "FORMAT", "WKT2");
+  compound.exportToWkt(&pszWKT, papszOptions);
+  std::string swkt(pszWKT);
+  CRS out(swkt);
+  CPLFree(pszWKT);
+  CSLDestroy(papszOptions);
+
+  return out;
+}

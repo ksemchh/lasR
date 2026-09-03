@@ -18,6 +18,9 @@ public:
   bool is_meters() const;
   bool is_feets() const;
   bool is_geographic() const;
+  bool is_compound() const;
+  bool has_vertical() const;
+  int get_vertical_epsg() const;
   void dump() const;
   bool operator==(const CRS& other) const;
   std::string get_wkt() const;
@@ -35,5 +38,8 @@ private:
 // transformation cannot be built, or no sample reprojects (the box is entirely outside the
 // transform domain). An empty/unset box (min > max) is left unchanged and returns true.
 bool reproject_bbox(const CRS& source, const CRS& target, double& xmin, double& ymin, double& xmax, double& ymax);
+
+// Assemble a compound CRS. Returns an invalid CRS if an input is invalid or already compound.
+CRS make_compound(const CRS& horizontal, const CRS& vertical);
 
 #endif
