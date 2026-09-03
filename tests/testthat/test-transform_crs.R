@@ -332,10 +332,11 @@ test_that("transform_crs reprojects Z through the geoid when the target describe
   res <- try(exec(reader_las() + transform_crs(4979) + write_las(out), on = src, noread = TRUE), silent = TRUE)
   skip_if(inherits(res, "try-error"), "no vertical transformation available: the EGM96 grid is missing")
 
+  # cs2cs puts the undulation here at -35.5 m; the tolerance is absolute and in metres
   before <- read_range(src)
   after <- read_range(out)
-  expect_equal(unname(after["zmin"] - before["zmin"]), -35.5, tolerance = 0.1)
-  expect_equal(unname(after["zmax"] - before["zmax"]), -35.5, tolerance = 0.1)
+  expect_lt(abs(unname(after["zmin"] - before["zmin"]) + 35.5), 0.2)
+  expect_lt(abs(unname(after["zmax"] - before["zmax"]) + 35.5), 0.2)
 })
 
 test_that("transform_crs leaves Z alone when the vertical CRS does not change",
