@@ -25,6 +25,12 @@ transformations (compound/vertical CRS) are out of scope.
 The source CRS is the CRS carried by the files being read or the one assigned with
 \link{set_crs} earlier in the pipeline. The stage therefore typically appears after the
 \link{reader}. A point that falls outside the domain of the transformation is dropped.
+
+A collection may hold files that do not share a CRS. Each file is then reprojected from
+its own CRS, and the extents of the collection are expressed in the CRS of the first file
+so that the coverage, the chunking and the neighbour search stay meaningful. A query that
+spans files of different CRS is refused: such files are merged in a single read and their
+points cannot be reprojected together.
 }
 \examples{
 \dontrun{

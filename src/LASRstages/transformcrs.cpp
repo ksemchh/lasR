@@ -162,6 +162,19 @@ bool LASRtransformcrs::set_chunk(Chunk& chunk)
 {
   Stage::set_chunk(chunk);
 
+  // The chunk carries the CRS of the files it reads. The CRS seen at parse time is the one
+  // of the collection and only serves when the chunk does not know better.
+  if (chunk.crs.is_valid() && !(chunk.crs == source_crs))
+  {
+    source_crs = chunk.crs;
+
+    if (transform != nullptr)
+    {
+      OGRCoordinateTransformation::DestroyCT(transform);
+      transform = nullptr;
+    }
+  }
+
   if (source_crs.is_valid() && target_crs.is_valid())
   {
     const double sxmin = chunk.xmin, symin = chunk.ymin, sxmax = chunk.xmax, symax = chunk.ymax;

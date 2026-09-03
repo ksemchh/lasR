@@ -260,3 +260,41 @@ test_that("transform_crs does not inflate projected buffers from geographic sour
   expect_lt(terra::nrow(r), 1000)
   expect_gt(terra::ncell(r), 0)
 })
+
+test_that("transform_crs reprojects each file from its own CRS",
+{
+  f <- system.file("extdata", "Megaplot.las", package = "lasR")
+  src <- read_range(f)
+
+  # The same plot written in EPSG:4326, to be read next to the native NAD83 / UTM 17N one
+  geo <- tempfile(fileext = ".las")
+  exec(reader_las() + transform_crs(4326) + write_las(geo), on = f, noread = TRUE)
+
+  utm <- tempfile(fileext = ".las")
+  exec(reader_las() + write_las(utm), on = f, noread = TRUE)
+
+  out <- tempfile(fileext = ".las")
+  expect_warning(exec(reader_las() + transform_crs(26917) + write_las(out), on = c(utm, geo), noread = TRUE), "mix CRS")
+
+  # Both files land back on the plot instead of the geographic file being relabelled
+  r <- read_range(out)
+  expect_equal(read_epsg(out), 26917L)
+  expect_equal(unname(r["xmin"]), unname(src["xmin"]), tolerance = 0.02)
+  expect_equal(unname(r["xmax"]), unname(src["xmax"]), tolerance = 0.02)
+  expect_equal(unname(r["ymin"]), unname(src["ymin"]), tolerance = 0.02)
+  expect_equal(unname(r["ymax"]), unname(src["ymax"]), tolerance = 0.02)
+})
+
+test_that("a query spanning files of different CRS is refused",
+{
+  f <- system.file("extdata", "Megaplot.las", package = "lasR")
+
+  geo <- tempfile(fileext = ".las")
+  exec(reader_las() + transform_crs(4326) + write_las(geo), on = f, noread = TRUE)
+
+  utm <- tempfile(fileext = ".las")
+  exec(reader_las() + write_las(utm), on = f, noread = TRUE)
+
+  pipeline <- reader_rectangles(684700, 5017700, 685100, 5018100) + transform_crs(26917) + summarise()
+  expect_error(suppressWarnings(exec(pipeline, on = c(utm, geo), noread = TRUE)), "different CRS")
+})

@@ -1147,6 +1147,12 @@ set_crs = function(x)
 #' \link{set_crs} earlier in the pipeline. The stage therefore typically appears after the
 #' \link{reader}. A point that falls outside the domain of the transformation is dropped.
 #'
+#' A collection may hold files that do not share a CRS. Each file is then reprojected from
+#' its own CRS, and the extents of the collection are expressed in the CRS of the first file
+#' so that the coverage, the chunking and the neighbour search stay meaningful. A query that
+#' spans files of different CRS is refused: such files are merged in a single read and their
+#' points cannot be reprojected together.
+#'
 #' @param crs integer or string. EPSG code or WKT string of the **target** CRS, understood by GDAL.
 #' @export
 #' @md
