@@ -278,13 +278,14 @@ test_that("transform_crs reprojects each file from its own CRS",
   out <- tempfile(fileext = ".las")
   exec(reader_las() + transform_crs(26917) + write_las(out), on = c(utm, geo), noread = TRUE)
 
-  # Both files land back on the plot instead of the geographic file being relabelled
+  # Both files land back on the plot instead of the geographic file being relabelled. The
+  # tolerance is absolute and in metres: the round trip through degrees quantizes at 1e-7 deg,
+  # about 1.1 cm. expect_equal() would compare relative to coordinates of 5e6 and pass on a
+  # file that landed kilometres away
   r <- read_range(out)
   expect_equal(read_epsg(out), 26917L)
-  expect_equal(unname(r["xmin"]), unname(src["xmin"]), tolerance = 0.02)
-  expect_equal(unname(r["xmax"]), unname(src["xmax"]), tolerance = 0.02)
-  expect_equal(unname(r["ymin"]), unname(src["ymin"]), tolerance = 0.02)
-  expect_equal(unname(r["ymax"]), unname(src["ymax"]), tolerance = 0.02)
+  for (corner in c("xmin", "xmax", "ymin", "ymax"))
+    expect_lt(abs(unname(r[corner]) - unname(src[corner])), 0.05)
 })
 
 test_that("a query spanning files of different CRS is refused",
