@@ -273,8 +273,10 @@ test_that("transform_crs reprojects each file from its own CRS",
   utm <- tempfile(fileext = ".las")
   exec(reader_las() + write_las(utm), on = f, noread = TRUE)
 
+  # The mixed CRS notice reaches stderr through REprintf, not as an R condition, so it is
+  # not something expect_warning() can see
   out <- tempfile(fileext = ".las")
-  expect_warning(exec(reader_las() + transform_crs(26917) + write_las(out), on = c(utm, geo), noread = TRUE), "mix CRS")
+  exec(reader_las() + transform_crs(26917) + write_las(out), on = c(utm, geo), noread = TRUE)
 
   # Both files land back on the plot instead of the geographic file being relabelled
   r <- read_range(out)
@@ -296,5 +298,5 @@ test_that("a query spanning files of different CRS is refused",
   exec(reader_las() + write_las(utm), on = f, noread = TRUE)
 
   pipeline <- reader_rectangles(684700, 5017700, 685100, 5018100) + transform_crs(26917) + summarise()
-  expect_error(suppressWarnings(exec(pipeline, on = c(utm, geo), noread = TRUE)), "different CRS")
+  expect_error(exec(pipeline, on = c(utm, geo), noread = TRUE), "different CRS")
 })
