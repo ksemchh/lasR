@@ -36,11 +36,11 @@ bool LASRrandomwalker::process(PointCloud*& las)
 {
   auto start_time = std::chrono::high_resolution_clock::now();
 
-  LASRlocalmaximum* lmf = nullptr;
+  StageMaxima* lmf = nullptr;
   StageRaster* rst = nullptr;
   for (auto elem : connections)
   {
-    LASRlocalmaximum* p = dynamic_cast<LASRlocalmaximum*>(elem.second);
+    StageMaxima* p = dynamic_cast<StageMaxima*>(elem.second);
     if (p)
       lmf = p;
     else
@@ -49,7 +49,7 @@ bool LASRrandomwalker::process(PointCloud*& las)
 
   if (lmf == nullptr || rst == nullptr)
   {
-    last_error = "invalid pointers: must be 'LASRlocalmaximum' and 'StageRaster'. Please report this error."; // # nocov
+    last_error = "invalid pointers: must be 'StageMaxima' and 'StageRaster'. Please report this error."; // # nocov
     return false; // # nocov
   }
 
@@ -269,13 +269,11 @@ bool LASRrandomwalker::connect(const std::list<std::unique_ptr<Stage>>& pipeline
 
   if (s == nullptr) return false;
 
-  LASRlocalmaximum* p = dynamic_cast<LASRlocalmaximum*>(s);
+  StageMaxima* p = dynamic_cast<StageMaxima*>(s);
   StageRaster* q = dynamic_cast<StageRaster*>(s);
 
-  if (p)
-    set_connection(p);
-  else if(q)
-    set_connection(q);
+  if (p || q)
+    set_connection(s);
   else
   {
     last_error = "Incompatible stage combination for 'random_walker'"; // # nocov
