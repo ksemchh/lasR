@@ -23,15 +23,29 @@ bool LASRlasreader::set_chunk(Chunk& chunk)
 
   lasio = new LASio();
 
+  // A circular query is already narrower than its own box and is left alone
+  double qxmin = chunk.xmin;
+  double qymin = chunk.ymin;
+  double qxmax = chunk.xmax;
+  double qymax = chunk.ymax;
+
+  if (chunk.aoi != nullptr && chunk.shape != ShapeType::CIRCLE)
+  {
+    qxmin = MAX(qxmin, chunk.aoi->xmin());
+    qymin = MAX(qymin, chunk.aoi->ymin());
+    qxmax = MIN(qxmax, chunk.aoi->xmax());
+    qymax = MIN(qymax, chunk.aoi->ymax());
+  }
+
   try
   {
     lasio->query(
         chunk.main_files,
         chunk.neighbour_files,
-        chunk.xmin,
-        chunk.ymin,
-        chunk.xmax,
-        chunk.ymax,
+        qxmin,
+        qymin,
+        qxmax,
+        qymax,
         chunk.buffer,
         chunk.shape == ShapeType::CIRCLE,
         filters);
@@ -66,11 +80,14 @@ bool LASRlasreader::process(Point*& point)
   if (point == nullptr)
     point = new Point(&header->schema);
 
+  AOIposition position = AOI_INSIDE;
+
   do
   {
     if (lasio->read_point(point))
     {
-      if (point->inside_buffer(xmin, ymin, xmax, ymax, circular))
+      position = aoi_position(point->get_x(), point->get_y());
+      if (position != AOI_INSIDE || point->inside_buffer(xmin, ymin, xmax, ymax, circular))
         point->set_buffered();
     }
     else
@@ -79,7 +96,7 @@ bool LASRlasreader::process(Point*& point)
       delete point;
       point = nullptr;
     }
-  } while (point != nullptr && pointfilter.filter(point));
+  } while (point != nullptr && (pointfilter.filter(point) || position == AOI_OUTSIDE));
 
   return true;
 }
@@ -102,7 +119,11 @@ bool LASRlasreader::process(PointCloud*& las)
   {
     if (progress->interrupted()) break;
     if (pointfilter.filter(&p)) continue;
-    if (p.inside_buffer(xmin, ymin, xmax, ymax, circular)) p.set_buffered();
+
+    AOIposition position = aoi_position(p.get_x(), p.get_y());
+    if (position == AOI_OUTSIDE) continue;
+
+    if (position == AOI_BUFFER || p.inside_buffer(xmin, ymin, xmax, ymax, circular)) p.set_buffered();
     if (!las->add_point(p)) return false;
 
     progress->update(lasio->p_count());
