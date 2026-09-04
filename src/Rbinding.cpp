@@ -61,6 +61,7 @@ RCPP_MODULE(stages)
   function("delete_points", &api::delete_points, "Delete points that match criteria");
   function("edit_attribute", &api::edit_attribute, "Edit an attribute of the points");
   function("filter_with_grid", &api::filter_with_grid, "Filter points with a grid layout");
+  function("keep_latest", &api::keep_latest, "Keep the most recent acquisition where several overlap");
   function("focal", &api::focal, "Focal operation on a raster");
   function("geometry_feature", &api::geometry_features, "SVD decomposition and metrics");
   function("hull", &api::hull, "Compute hull of a point cloud");
